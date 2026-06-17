@@ -761,16 +761,17 @@ function handleChoiceClick(renderIdx, origIdx, q, div) {
 // ── Copy Question to Clipboard ─────────────────
 async function copyQuestion() {
   const q = questions[currentIndex];
-  const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+  // Use the SAME shuffled order shown in the UI
+  const displayChoices = q._shuffledChoices || q.choices;
 
   let text = `📋 QUESTION ${currentIndex + 1}${q.domain ? ` — ${q.domain}` : ''}\n`;
   text += `${'─'.repeat(50)}\n\n`;
   text += `${q.question}\n\n`;
   text += `Choices:\n`;
 
-  q.choices.forEach((c, ci) => {
+  displayChoices.forEach((c, ri) => {
     const mark = c.correct ? ' ✅ CORRECT' : '';
-    text += `${LETTERS[ci]}. ${c.text}${mark}\n`;
+    text += `${LETTERS[ri]}. ${c.text}${mark}\n`;
     if (c.explanation) {
       text += `   └ ${c.explanation}\n`;
     }
@@ -782,7 +783,6 @@ async function copyQuestion() {
 
   try {
     await navigator.clipboard.writeText(text);
-    // Flash the button to confirm
     const btn = $('copy-btn');
     const orig = btn.innerHTML;
     btn.innerHTML = '✅ Copied!';
@@ -794,7 +794,6 @@ async function copyQuestion() {
       btn.style.color = '';
     }, 1500);
   } catch(err) {
-    // Fallback for non-HTTPS
     const ta = document.createElement('textarea');
     ta.value = text;
     ta.style.position = 'fixed';
