@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exam Practice Test</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ========== SETUP SCREEN ========== -->
+  <div id="setup-screen" class="screen active">
+    <div class="setup-card">
+      <h1 class="app-title">📝 Exam Practice Test</h1>
+      <p class="app-subtitle">Reusable quiz engine — supply a JSON, run any exam</p>
+
+      <div class="form-group">
+        <label for="json-url">Question Bank JSON URL</label>
+        <input
+          type="text"
+          id="json-url"
+          placeholder="data/questions-az305.json"
+          value="data/questions-az305.json"
+        />
+        <span class="hint">Relative path or full URL to your questions JSON file</span>
+      </div>
+
+      <div class="form-group">
+        <label for="passing-score">Passing Score (%)</label>
+        <input
+          type="number"
+          id="passing-score"
+          min="1"
+          max="100"
+          value="70"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Or load from file upload</label>
+        <input type="file" id="json-file" accept=".json" />
+      </div>
+
+      <button id="start-btn" class="btn btn-primary">Start Exam</button>
+      <p id="setup-error" class="error-msg hidden"></p>
+    </div>
+  </div>
+
+  <!-- ========== EXAM SCREEN ========== -->
+  <div id="exam-screen" class="screen">
+
+    <!-- Header bar -->
+    <header class="exam-header">
+      <div class="header-left">
+        <span id="exam-title" class="exam-title-tag"></span>
+      </div>
+      <div class="header-right">
+        <span class="timer" id="timer">--:--</span>
+        <span class="question-counter" id="question-counter">Q 1 / 50</span>
+      </div>
+    </header>
+
+    <!-- Progress bar -->
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <!-- Question panel -->
+    <main class="question-panel">
+      <div class="question-meta">
+        <span class="q-domain" id="q-domain"></span>
+        <button id="flag-btn" class="btn btn-flag" title="Flag for review">
+          🚩 <span id="flag-label">Flag</span>
+        </button>
+      </div>
+
+      <div class="question-text" id="question-text"></div>
+
+      <div class="choices-list" id="choices-list"></div>
+
+      <div class="question-nav">
+        <button id="prev-btn" class="btn btn-secondary" disabled>&#8592; Previous</button>
+        <button id="next-btn" class="btn btn-primary">Next &#8594;</button>
+        <button id="review-btn" class="btn btn-secondary hidden">Review All Flagged</button>
+      </div>
+    </main>
+
+    <!-- Sidebar: question navigator -->
+    <aside class="nav-sidebar" id="nav-sidebar">
+      <h3>Questions</h3>
+      <div class="q-nav-grid" id="q-nav-grid"></div>
+
+      <div class="nav-legend">
+        <span class="leg-item"><span class="dot dot-answered"></span> Answered</span>
+        <span class="leg-item"><span class="dot dot-flagged"></span> Flagged</span>
+        <span class="leg-item"><span class="dot dot-unanswered"></span> Unanswered</span>
+      </div>
+
+      <div class="nav-actions">
+        <button id="submit-btn" class="btn btn-submit">Submit Exam</button>
+      </div>
+    </aside>
+
+    <!-- Flagged mini panel (collapsible) -->
+    <button class="flagged-toggle" id="flagged-toggle" onclick="toggleFlaggedPanel()">
+      🚩 Flagged (<span id="flagged-count">0</span>)
+    </button>
+    <div class="flagged-panel" id="flagged-panel">
+      <h4>Flagged Questions</h4>
+      <div id="flagged-list"></div>
+    </div>
+
+  </div>
+
+  <!-- ========== RESULTS SCREEN ========== -->
+  <div id="results-screen" class="screen">
+
+    <div class="results-card" id="results-card"></div>
+
+    <div class="results-actions">
+      <button class="btn btn-secondary" onclick="restartExam()">&#8635; Retake Exam</button>
+      <button class="btn btn-primary" onclick="reviewAnswers()">Review Answers</button>
+    </div>
+
+    <!-- Detailed review table -->
+    <div class="review-section hidden" id="review-section">
+      <h2>Answer Review</h2>
+      <div id="review-list"></div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
