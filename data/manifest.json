@@ -1,0 +1,10 @@
+{
+  "questionBanks": [
+    {
+      "id": "az305",
+      "name": "AZ-305: Designing Microsoft Azure Infrastructure Solutions",
+      "file": "data/questions-az305.json",
+      "description": "40 scenario-based questions covering identity, governance, data storage, business continuity, and infrastructure design."
+    }
+  ]
+}

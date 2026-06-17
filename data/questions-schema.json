@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Exam Question Bank Schema",
-  "description": "Schema for the exam-practice-test quiz engine. Supply one JSON file per exam.",
+  "description": "Schema for the exam-practice-test quiz engine. One JSON file per exam.",
 
   "type": "object",
   "required": ["title", "questions"],
@@ -23,7 +23,7 @@
     },
     "count": {
       "type": "integer",
-      "description": "Max questions to include. If omitted, all questions are used. Set count < total to randomly sample."
+      "description": "Max questions to include. If omitted, all questions are used."
     },
     "shuffle": {
       "type": "boolean",
@@ -44,8 +44,8 @@
         "type": "object",
         "required": ["name"],
         "properties": {
-          "name":    { "type": "string" },
-          "weight":  { "type": "number" }
+          "name":   { "type": "string" },
+          "weight": { "type": "number" }
         }
       }
     },
@@ -62,7 +62,7 @@
           },
           "domain": {
             "type": "string",
-            "description": "Domain/category shown as a pill badge (e.g. 'Identity', 'Storage')"
+            "description": "Domain/category shown as a badge (e.g. 'Identity', 'Storage')"
           },
           "question": {
             "type": "string",
@@ -86,19 +86,22 @@
                 },
                 "correct": {
                   "type": "boolean",
-                  "description": "true = correct answer"
+                  "description": "true = correct answer (exactly one per question)"
+                },
+                "explanation": {
+                  "type": "string",
+                  "description": "Why this choice is right or wrong — shown in Study Mode and Review"
                 }
               }
             }
           },
           "explanation": {
             "type": "string",
-            "description": "Shown during answer review — why the correct answer is right"
+            "description": "Overall explanation shown after checking answer (Study Mode) and during Review"
           },
           "tags": {
             "type": "array",
-            "items": { "type": "string" },
-            "description": "Free-form tags for filtering or grouping"
+            "items": { "type": "string" }
           }
         }
       }
