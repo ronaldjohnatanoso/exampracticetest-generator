@@ -673,9 +673,9 @@ function renderQuestion() {
   $('study-feedback').classList.add('hidden');
   $('study-explanation').classList.add('hidden');
 
-  // Choices
-  const shuffledChoices = q.shuffleChoices ? shuffle([...q.choices]) : q.choices;
-  const choiceMap = shuffledChoices.map((c, ri) => ({ ...c, origIdx: q.choices.indexOf(c), renderIdx: ri }));
+  // Choices — store shuffled so studyCheckAnswer uses the SAME order
+  q._shuffledChoices = q.shuffleChoices ? shuffle([...q.choices]) : q.choices;
+  const choiceMap = q._shuffledChoices.map((c, ri) => ({ ...c, origIdx: q.choices.indexOf(c), renderIdx: ri }));
 
   const list = $('choices-list');
   list.innerHTML = '';
@@ -815,21 +815,23 @@ function studyCheckAnswer() {
   studyChecked[currentIndex] = true;
   const q = questions[currentIndex];
 
+  // Use the SAME shuffled order stored during renderQuestion()
+  const shuffledChoices = q._shuffledChoices || q.choices;
+
   // Color all choices
   document.querySelectorAll('.choice-item').forEach(div => {
     div.classList.add('locked');
     const ri = parseInt(div.dataset.renderIdx);
-    // Find the choice
-    const shuffledChoices = q.shuffleChoices ? shuffle([...q.choices]) : q.choices;
-    const origIdx = q.choices.indexOf(shuffledChoices[ri]);
+    const choice = shuffledChoices[ri]; // same choice shown at this position
+    const origIdx = q.choices.indexOf(choice);
+
     if (origIdx === userAnswer.choiceIdx) {
       div.classList.add(userAnswer.correct ? 'correct' : 'incorrect');
     }
-    if (q.choices[origIdx].correct) {
+    if (choice.correct) {
       div.classList.add('correct');
     }
     // Add explanation if available
-    const choice = q.choices[origIdx];
     if (choice.explanation) {
       const content = div.querySelector('.choice-content');
       if (content) {
@@ -841,12 +843,14 @@ function studyCheckAnswer() {
     }
   });
 
-  showStudyFeedback(q, userAnswer);
+  // Feedback: show correct letter in the SHUFFLED order the user saw
+  const correctInShuffled = shuffledChoices.findIndex(c => c.correct);
+  const correctLetter = LETTERS[correctInShuffled];
+
+  showStudyFeedback(q, userAnswer, correctLetter);
   updateNavDots();
   $('study-check-btn').disabled = true;
 
-  // Auto-advance to next unanswered on last question? No — let user review
-  // If last question, show submit
   if (currentIndex === questions.length - 1) {
     $('submit-btn').classList.remove('hidden');
     $('study-check-btn').classList.add('hidden');
@@ -854,7 +858,7 @@ function studyCheckAnswer() {
   }
 }
 
-function showStudyFeedback(q, userAnswer) {
+function showStudyFeedback(q, userAnswer, correctLetter) {
   const fb = $('study-feedback');
   fb.classList.remove('hidden', 'correct-feedback', 'incorrect-feedback');
 
@@ -866,10 +870,13 @@ function showStudyFeedback(q, userAnswer) {
     `;
   } else {
     fb.classList.add('incorrect-feedback');
+    // Use correctLetter (shuffled position) so it matches what user sees
+    const correctInShuffled = (q._shuffledChoices || q.choices).findIndex(c => c.correct);
+    const letter = correctLetter || LETTERS[correctInShuffled];
     const correctChoice = q.choices.find(c => c.correct);
     fb.innerHTML = `
       <div class="feedback-title">❌ Incorrect</div>
-      <div class="feedback-sub">Correct answer: ${LETTERS[q.choices.indexOf(correctChoice)]} — ${correctChoice.text}</div>
+      <div class="feedback-sub">Correct answer: ${letter} — ${correctChoice.text}</div>
     `;
   }
 
@@ -1041,20 +1048,33 @@ function reviewAnswers() {
     const isCorrect  = userAnswer && userAnswer.correct;
     const isUnanswered = userAnswer === undefined;
 
+    // Use the SAME shuffled order shown during the exam
+    const shuffledChoices = q._shuffledChoices || q.choices;
+
+    // Find which position in shuffled array the user actually picked
+    const userPickedIdx = userAnswer
+      ? shuffledChoices.findIndex(c => q.choices.indexOf(c) === userAnswer.choiceIdx)
+      : -1;
+
+    // Find correct in shuffled array
+    const correctIdx = shuffledChoices.findIndex(c => c.correct);
+
     const item = document.createElement('div');
     item.className = 'review-item' + (isUnanswered ? '' : isCorrect ? ' correct-review' : ' wrong-review');
 
-    // Build choices HTML with per-choice explanations
+    // Build choices HTML in SHUFFLED order with correct letters
     let choicesHTML = '';
-    q.choices.forEach((c, ci) => {
-      const letter = LETTERS[ci];
+    shuffledChoices.forEach((c, ri) => {
+      const letter = LETTERS[ri]; // letter in shuffled position
+      const origIdx = q.choices.indexOf(c);
       let cls = 'review-choice';
       let mark = '';
-      if (userAnswer && ci === userAnswer.choiceIdx && ci === q.choices.findIndex(x => x.correct)) {
+
+      if (ri === userPickedIdx && ri === correctIdx) {
         cls += ' user-correct'; mark = ' ✓ Your answer (correct)';
-      } else if (userAnswer && ci === userAnswer.choiceIdx) {
+      } else if (ri === userPickedIdx) {
         cls += ' user-wrong'; mark = ' ✗ Your answer';
-      } else if (ci === q.choices.findIndex(x => x.correct)) {
+      } else if (ri === correctIdx) {
         cls += ' correct-answer'; mark = ' ✓ Correct';
       }
 
