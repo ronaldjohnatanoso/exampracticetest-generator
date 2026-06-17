@@ -42,44 +42,65 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ── Manifest / Dropdown ─────────────────────────
+// Known question bank files — add new banks here
+const KNOWN_BANKS = [
+  { id: 'az305', file: 'data/questions-az305.json' },
+  // Add more banks here, e.g.:
+  // { id: 'az104', file: 'data/questions-az104.json' },
+  // { id: 'az700', file: 'data/questions-az700.json' },
+];
+
 async function loadManifest() {
   const select = $('qb-select');
-  try {
-    const resp = await fetch('data/manifest.json');
-    if (!resp.ok) throw new Error('manifest not found');
-    const data = await resp.json();
+  select.innerHTML = '';
 
-    select.innerHTML = '';
-    data.questionBanks.forEach(bank => {
-      const opt = document.createElement('option');
-      opt.value = bank.file;
-      const versionTag = bank.version ? ` — v${bank.version}` : '';
-      opt.textContent = `${bank.name}${versionTag}`;
-      opt.dataset.desc = bank.description || '';
-      select.appendChild(opt);
-    });
+  const results = [];
+  // Fetch all known banks in parallel, keep only those that load successfully
+  await Promise.allSettled(
+    KNOWN_BANKS.map(async (bank) => {
+      try {
+        const resp = await fetch(bank.file);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        results.push({
+          id:          bank.id,
+          file:        bank.file,
+          name:        data.title      || bank.id,
+          version:     data.version    || '',
+          description: data.description || `${data.questions?.length || 0} questions`,
+        });
+      } catch { /* skip unavailable banks */ }
+    })
+  );
 
-    // Separator + custom options
-    const sep = document.createElement('option');
-    sep.disabled = true;
-    sep.textContent = '──────────';
-    select.appendChild(sep);
+  // Sort: known banks first, then custom uploads
+  results.sort((a, b) => a.id.localeCompare(b.id));
 
-    const genOpt = document.createElement('option');
-    genOpt.value = '__generate__';
-    genOpt.textContent = '💡 Generate Your Own Bank →';
-    genOpt.dataset.desc = 'Open the template generator to create a custom question bank using AI.';
-    select.appendChild(genOpt);
+  results.forEach(bank => {
+    const opt = document.createElement('option');
+    opt.value = bank.file;
+    const versionTag = bank.version ? ` — v${bank.version}` : '';
+    opt.textContent = `${bank.name}${versionTag}`;
+    opt.dataset.desc = bank.description || '';
+    select.appendChild(opt);
+  });
 
-    // Auto-select first
-    if (data.questionBanks.length > 0) {
-      select.selectedIndex = 0;
-      $('qb-desc').textContent = data.questionBanks[0].description || '';
-    }
-  } catch {
-    // Fallback: single "custom" option
-    select.innerHTML = '<option value="custom">Custom (upload JSON)</option>';
-    $('qb-desc').textContent = 'Upload a JSON question bank file below.';
+  // Separator + custom options
+  const sep = document.createElement('option');
+  sep.disabled = true;
+  sep.textContent = '──────────';
+  select.appendChild(sep);
+
+  const genOpt = document.createElement('option');
+  genOpt.value = '__generate__';
+  genOpt.textContent = '💡 Generate Your Own Bank →';
+  genOpt.dataset.desc = 'Open the template generator to create a custom question bank using AI.';
+  select.appendChild(genOpt);
+
+  // Auto-select first available bank
+  if (results.length > 0) {
+    select.selectedIndex = 0;
+    $('qb-desc').textContent = results[0].description || '';
   }
 }
 
