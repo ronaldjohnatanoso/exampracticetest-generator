@@ -59,6 +59,18 @@ async function loadManifest() {
       select.appendChild(opt);
     });
 
+    // Separator + custom options
+    const sep = document.createElement('option');
+    sep.disabled = true;
+    sep.textContent = '──────────';
+    select.appendChild(sep);
+
+    const genOpt = document.createElement('option');
+    genOpt.value = '__generate__';
+    genOpt.textContent = '💡 Generate Your Own Bank →';
+    genOpt.dataset.desc = 'Open the template generator to create a custom question bank using AI.';
+    select.appendChild(genOpt);
+
     // Auto-select first
     if (data.questionBanks.length > 0) {
       select.selectedIndex = 0;
@@ -475,6 +487,14 @@ function showPasteError(msg, details) {
 
 // ── Init ───────────────────────────────────────
 async function onStart() {
+  const selectedFile = $('qb-select').value;
+
+  // Intercept: open template generator instead
+  if (selectedFile === '__generate__') {
+    showTemplateModal();
+    return;
+  }
+
   mode         = document.querySelector('input[name="mode"]:checked').value;
   passingScore = parseInt($('passing-score').value) || 70;
 
