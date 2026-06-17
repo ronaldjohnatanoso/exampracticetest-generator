@@ -1,5 +1,6 @@
 {
   "title": "AZ-305: Designing Microsoft Azure Infrastructure Solutions",
+  "version": "1.0",
   "description": "Practice exam covering identity, governance, data storage, business continuity, and infrastructure design.",
   "timeLimit": 100,
   "count": 40,

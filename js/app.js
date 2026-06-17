@@ -53,7 +53,8 @@ async function loadManifest() {
     data.questionBanks.forEach(bank => {
       const opt = document.createElement('option');
       opt.value = bank.file;
-      opt.textContent = bank.name;
+      const versionTag = bank.version ? ` — v${bank.version}` : '';
+      opt.textContent = `${bank.name}${versionTag}`;
       opt.dataset.desc = bank.description || '';
       select.appendChild(opt);
     });
@@ -515,6 +516,7 @@ async function onStart() {
 
   examConfig = {
     title:       questionBank.title       || 'Practice Exam',
+    version:     questionBank.version     || '',
     description: questionBank.description || '',
     timeLimit:   parseInt($('time-limit').value) || 0,
     passingScore,
@@ -611,7 +613,10 @@ function renderTimer() {
 function renderQuestion() {
   const q = questions[currentIndex];
 
-  $('exam-title').textContent         = examConfig.title;
+  const titleText = examConfig.version
+    ? `${examConfig.title} — v${examConfig.version}`
+    : examConfig.title;
+  $('exam-title').textContent         = titleText;
   $('question-counter').textContent   = `Q ${currentIndex + 1} / ${questions.length}`;
   $('q-domain').textContent           = q.domain || '';
 
@@ -956,6 +961,9 @@ function submitExam() {
 
 // ── Results ──────────────────────────────────────
 function renderResults(score, correct, total, passed) {
+  const titleText = examConfig.version
+    ? `${examConfig.title} — v${examConfig.version}`
+    : examConfig.title;
   const card = $('results-card');
   const color = passed ? 'var(--success)' : 'var(--danger)';
   const tag   = passed
@@ -966,7 +974,7 @@ function renderResults(score, correct, total, passed) {
     : 'No limit';
 
   card.innerHTML = `
-    <h1>${examConfig.title}</h1>
+    <h1>${titleText}</h1>
     ${tag}
     <div class="big-score" style="color:${color}">${score}%</div>
     <p class="score-detail">${correct} correct out of ${total} questions</p>
