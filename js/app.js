@@ -151,8 +151,8 @@ function validateQuestionBank(data) {
     const correctCount = q.choices.filter(c => c.correct === true).length;
     if (correctCount === 0) {
       errors.push(`${prefix}: no correct answer marked ("correct": true missing on one choice).`);
-    } else if (correctCount > 1) {
-      errors.push(`${prefix}: more than one correct answer marked (only one choice should have "correct": true).`);
+    } else if (correctCount > 1 && q.multiSelect !== true) {
+      errors.push(`${prefix}: ${correctCount} correct answers found but "multiSelect" is not set. Add "multiSelect": true if this is intentional.`);
     }
 
     q.choices.forEach((c, ci) => {
@@ -188,6 +188,8 @@ The JSON must follow this exact structure:
     {
       "id": "[Optional unique ID — e.g. ID-001]",
       "domain": "[Domain name — must match one in the domains array above]",
+      "multiSelect": "[true or false — set to true if multiple choices can be correct]",
+      "selectCount": "[Number — required only if multiSelect is true; how many correct choices]",
       "question": "[The scenario-based question text. Be specific and realistic.]",
       "shuffleChoices": [true or false],
       "choices": [
@@ -208,12 +210,13 @@ The JSON must follow this exact structure:
 
 RULES:
 1. Questions must be SCENARIO-BASED — real-world design/decisions, not trivia
-2. Exactly ONE choice per question must have "correct": true
-3. Every choice MUST have an "explanation" field explaining WHY it is right or wrong
-4. All questions within a domain should test different sub-topics
-5. Include enough questions to make a realistic exam (minimum 20 recommended)
-6. Output ONLY the raw JSON — no markdown code blocks, no commentary
-7. Make sure the JSON is valid and parses correctly`;
+2. For single-select questions: exactly ONE choice must have "correct": true
+3. For multi-select questions: set "multiSelect": true, set "selectCount", and have exactly that many choices with "correct": true
+4. Every choice MUST have an "explanation" field explaining WHY it is right or wrong
+5. All questions within a domain should test different sub-topics
+6. Include enough questions to make a realistic exam (minimum 20 recommended)
+7. Output ONLY the raw JSON — no markdown code blocks, no commentary
+8. Make sure the JSON is valid and parses correctly`;
 
 const TEMPLATE_SCHEMA = `{
   "title":        "string  (required) — exam name",
@@ -653,6 +656,7 @@ function renderTimer() {
 // ── Render Question ──────────────────────────────
 function renderQuestion() {
   const q = questions[currentIndex];
+  const isMulti = isMultiSelect(q);
 
   const titleText = examConfig.version
     ? `${examConfig.title} — v${examConfig.version}`
@@ -681,29 +685,40 @@ function renderQuestion() {
   list.innerHTML = '';
 
   const isChecked = studyChecked[currentIndex];
-  const userAnswer = answers[currentIndex];
+  const userAnswer = answers[currentIndex]; // array for multi, object for single
 
   choiceMap.forEach(choice => {
     const div = document.createElement('div');
-    div.className = 'choice-item';
+    div.className = 'choice-item' + (isMulti ? ' choice-multiselect' : '');
     div.dataset.renderIdx = choice.renderIdx;
 
-    if (userAnswer && userAnswer.choiceIdx === choice.origIdx) {
+    // Check if this choice is selected (array for multi, single value for single)
+    const isSelected = isMulti
+      ? (userAnswer && userAnswer.choiceIdxs.includes(choice.origIdx))
+      : (userAnswer && userAnswer.choiceIdx === choice.origIdx);
+    if (isSelected) {
       div.classList.add('selected');
     }
 
     // In study mode after checking: lock and color
     if (mode === 'study' && isChecked) {
       div.classList.add('locked');
+      const wasSelected = isMulti
+        ? (userAnswer && userAnswer.choiceIdxs.includes(choice.origIdx))
+        : (userAnswer && userAnswer.choiceIdx === choice.origIdx);
       if (choice.correct) {
         div.classList.add('correct');
-      } else if (userAnswer && userAnswer.choiceIdx === choice.origIdx && !choice.correct) {
+      } else if (wasSelected && !choice.correct) {
         div.classList.add('incorrect');
       }
     }
 
+    const checkIcon = isMulti
+      ? `<span class="choice-checkbox">${isSelected ? '☑' : '☐'}</span>`
+      : `<span class="choice-letter">${LETTERS[choice.renderIdx]}</span>`;
+
     div.innerHTML = `
-      <span class="choice-letter">${LETTERS[choice.renderIdx]}</span>
+      ${checkIcon}
       <div class="choice-content">
         <span class="choice-text">${choice.text}</span>
         ${(mode === 'study' && isChecked && choice.explanation
@@ -715,6 +730,9 @@ function renderQuestion() {
     list.appendChild(div);
   });
 
+  // Multi-select hint
+  updateMultiSelectHint(q, userAnswer);
+
   // Study mode: if already checked, show feedback
   if (mode === 'study' && isChecked) {
     showStudyFeedback(q, userAnswer);
@@ -724,7 +742,10 @@ function renderQuestion() {
   $('prev-btn').disabled = currentIndex === 0;
   if (mode === 'study') {
     $('next-btn').disabled = currentIndex === questions.length - 1;
-    $('study-check-btn').disabled = userAnswer === undefined || isChecked;
+    const hasSelection = isMulti
+      ? (userAnswer && userAnswer.choiceIdxs.length > 0)
+      : (userAnswer !== undefined);
+    $('study-check-btn').disabled = !hasSelection || isChecked;
   } else {
     $('next-btn').disabled = currentIndex === questions.length - 1;
   }
@@ -733,29 +754,73 @@ function renderQuestion() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+function isMultiSelect(q) {
+  const correctCount = q.choices.filter(c => c.correct).length;
+  return q.multiSelect === true || correctCount > 1;
+}
+
+function updateMultiSelectHint(q, userAnswer) {
+  // Update check button text for multi-select
+  if (isMultiSelect(q)) {
+    const correctCount = q.selectCount || q.choices.filter(c => c.correct).length;
+    const selectedCount = userAnswer ? userAnswer.choiceIdxs.length : 0;
+    $('study-check-btn').textContent = `✅ Check (${selectedCount}/${correctCount} selected)`;
+  } else {
+    $('study-check-btn').textContent = '✅ Check Answer';
+  }
+}
+
 // ── Handle Choice Click ──────────────────────────
 function handleChoiceClick(renderIdx, origIdx, q, div) {
   if (submitted) return;
-
-  // Study mode: don't lock in — just select, wait for Check Answer
-  if (mode === 'study' && !studyChecked[currentIndex]) {
-    answers[currentIndex] = { choiceIdx: origIdx, correct: q.choices[origIdx].correct };
-    document.querySelectorAll('.choice-item').forEach(el => el.classList.remove('selected'));
-    div.classList.add('selected');
-    $('study-check-btn').disabled = false;
-    return;
-  }
+  const isMulti = isMultiSelect(q);
 
   // Study mode already checked → ignore clicks
   if (mode === 'study' && studyChecked[currentIndex]) return;
 
-  // Exam mode: immediate selection
-  if (mode === 'exam') {
-    answers[currentIndex] = { choiceIdx: origIdx, correct: q.choices[origIdx].correct };
-    document.querySelectorAll('.choice-item').forEach(el => el.classList.remove('selected'));
-    div.classList.add('selected');
-    updateNavDots();
+  if (isMulti) {
+    // Multi-select: toggle this choice in the array
+    if (!answers[currentIndex]) {
+      answers[currentIndex] = { choiceIdxs: [], correct: false };
+    }
+    const idx = answers[currentIndex].choiceIdxs.indexOf(origIdx);
+    if (idx === -1) {
+      answers[currentIndex].choiceIdxs.push(origIdx);
+      div.classList.add('selected');
+      div.querySelector('.choice-checkbox').textContent = '☑';
+    } else {
+      answers[currentIndex].choiceIdxs.splice(idx, 1);
+      div.classList.remove('selected');
+      div.querySelector('.choice-checkbox').textContent = '☐';
+    }
+    // Recompute correctness
+    const correctIdxs = q.choices.map((c, i) => c.correct ? i : -1).filter(i => i !== -1);
+    answers[currentIndex].correct = arraysEqual(
+      answers[currentIndex].choiceIdxs.sort(),
+      correctIdxs.sort()
+    );
+    updateMultiSelectHint(q, answers[currentIndex]);
+    $('study-check-btn').disabled = answers[currentIndex].choiceIdxs.length === 0 || studyChecked[currentIndex];
+  } else {
+    // Single-select
+    if (mode === 'study' && !studyChecked[currentIndex]) {
+      answers[currentIndex] = { choiceIdx: origIdx, correct: q.choices[origIdx].correct };
+      document.querySelectorAll('.choice-item').forEach(el => el.classList.remove('selected'));
+      div.classList.add('selected');
+      $('study-check-btn').disabled = false;
+      return;
+    }
+    if (mode === 'exam') {
+      answers[currentIndex] = { choiceIdx: origIdx, correct: q.choices[origIdx].correct };
+      document.querySelectorAll('.choice-item').forEach(el => el.classList.remove('selected'));
+      div.classList.add('selected');
+      updateNavDots();
+    }
   }
+}
+
+function arraysEqual(a, b) {
+  return a.length === b.length && a.every((v, i) => v === b[i]);
 }
 
 // ── Copy Question to Clipboard ─────────────────
@@ -776,6 +841,11 @@ async function copyQuestion() {
       text += `   └ ${c.explanation}\n`;
     }
   });
+
+  if (isMultiSelect(q)) {
+    const correctCount = q.choices.filter(c => c.correct).length;
+    text += `\n📌 Multi-select: choose ${q.selectCount || correctCount} answer(s)\n`;
+  }
 
   if (q.explanation) {
     text += `\n💡 Explanation: ${q.explanation}\n`;
@@ -813,6 +883,7 @@ function studyCheckAnswer() {
 
   studyChecked[currentIndex] = true;
   const q = questions[currentIndex];
+  const isMulti = isMultiSelect(q);
 
   // Use the SAME shuffled order stored during renderQuestion()
   const shuffledChoices = q._shuffledChoices || q.choices;
@@ -821,15 +892,25 @@ function studyCheckAnswer() {
   document.querySelectorAll('.choice-item').forEach(div => {
     div.classList.add('locked');
     const ri = parseInt(div.dataset.renderIdx);
-    const choice = shuffledChoices[ri]; // same choice shown at this position
+    const choice = shuffledChoices[ri];
     const origIdx = q.choices.indexOf(choice);
 
-    if (origIdx === userAnswer.choiceIdx) {
-      div.classList.add(userAnswer.correct ? 'correct' : 'incorrect');
-    }
     if (choice.correct) {
       div.classList.add('correct');
     }
+
+    if (isMulti) {
+      // For multi-select: was this choice selected by user AND is it wrong?
+      const wasSelected = userAnswer.choiceIdxs.includes(origIdx);
+      if (wasSelected && !choice.correct) {
+        div.classList.add('incorrect');
+      }
+    } else {
+      if (origIdx === userAnswer.choiceIdx) {
+        div.classList.add(userAnswer.correct ? 'correct' : 'incorrect');
+      }
+    }
+
     // Add explanation if available
     if (choice.explanation) {
       const content = div.querySelector('.choice-content');
@@ -842,11 +923,13 @@ function studyCheckAnswer() {
     }
   });
 
-  // Feedback: show correct letter in the SHUFFLED order the user saw
-  const correctInShuffled = shuffledChoices.findIndex(c => c.correct);
-  const correctLetter = LETTERS[correctInShuffled];
+  // Feedback
+  const correctIdxs = shuffledChoices
+    .map((c, ri) => c.correct ? LETTERS[ri] : null)
+    .filter(l => l !== null);
+  const correctLetters = correctIdxs.join(', ');
 
-  showStudyFeedback(q, userAnswer, correctLetter);
+  showStudyFeedback(q, userAnswer, correctLetters);
   updateNavDots();
   $('study-check-btn').disabled = true;
 
@@ -857,26 +940,49 @@ function studyCheckAnswer() {
   }
 }
 
-function showStudyFeedback(q, userAnswer, correctLetter) {
+function showStudyFeedback(q, userAnswer, correctLetters) {
   const fb = $('study-feedback');
   fb.classList.remove('hidden', 'correct-feedback', 'incorrect-feedback');
+  const isMulti = isMultiSelect(q);
 
-  if (userAnswer && userAnswer.correct) {
-    fb.classList.add('correct-feedback');
-    fb.innerHTML = `
-      <div class="feedback-title">✅ Correct!</div>
-      <div class="feedback-sub">Great — you got this one right.</div>
-    `;
+  if (isMulti) {
+    // Multi-select feedback
+    if (userAnswer && userAnswer.correct) {
+      fb.classList.add('correct-feedback');
+      fb.innerHTML = `
+        <div class="feedback-title">✅ Correct!</div>
+        <div class="feedback-sub">All ${correctLetters} — you selected all the right answers.</div>
+      `;
+    } else {
+      const correctCount = q.choices.filter(c => c.correct).length;
+      fb.classList.add('incorrect-feedback');
+      fb.innerHTML = `
+        <div class="feedback-title">❌ Incorrect</div>
+        <div class="feedback-sub">Correct answers: ${correctLetters}<br>
+        You selected: ${(userAnswer ? userAnswer.choiceIdxs.map(ci => {
+          const ri = (q._shuffledChoices || q.choices).findIndex(c => q.choices.indexOf(c) === ci);
+          return LETTERS[ri];
+        }).join(', ') : 'none')}</div>
+      `;
+    }
   } else {
-    fb.classList.add('incorrect-feedback');
-    // Use correctLetter (shuffled position) so it matches what user sees
-    const correctInShuffled = (q._shuffledChoices || q.choices).findIndex(c => c.correct);
-    const letter = correctLetter || LETTERS[correctInShuffled];
-    const correctChoice = q.choices.find(c => c.correct);
-    fb.innerHTML = `
-      <div class="feedback-title">❌ Incorrect</div>
-      <div class="feedback-sub">Correct answer: ${letter} — ${correctChoice.text}</div>
-    `;
+    // Single-select feedback
+    if (userAnswer && userAnswer.correct) {
+      fb.classList.add('correct-feedback');
+      fb.innerHTML = `
+        <div class="feedback-title">✅ Correct!</div>
+        <div class="feedback-sub">Great — you got this one right.</div>
+      `;
+    } else {
+      fb.classList.add('incorrect-feedback');
+      const correctChoice = q.choices.find(c => c.correct);
+      const correctInShuffled = (q._shuffledChoices || q.choices).findIndex(c => c.correct);
+      const letter = correctLetters || LETTERS[correctInShuffled];
+      fb.innerHTML = `
+        <div class="feedback-title">❌ Incorrect</div>
+        <div class="feedback-sub">Correct answer: ${letter} — ${correctChoice.text}</div>
+      `;
+    }
   }
 
   // Show overall explanation if available
@@ -915,14 +1021,19 @@ function updateNavDots() {
   const dots = document.querySelectorAll('.nav-dot');
   dots.forEach((dot, i) => {
     dot.className = 'nav-dot';
+    const userAnswer = answers[i];
+    const isMulti = questions[i] ? isMultiSelect(questions[i]) : false;
+    const isAnswered = isMulti
+      ? (userAnswer && userAnswer.choiceIdxs.length > 0)
+      : (userAnswer !== undefined);
+
     if (mode === 'study' && studyChecked[i] !== undefined) {
-      // Show correct/wrong in study mode
       if (studyChecked[i]) {
         dot.classList.add(answers[i] && answers[i].correct ? 'dot-correct' : 'dot-wrong');
       }
-    } else if (answers[i] !== undefined && flagged.has(i)) {
+    } else if (isAnswered && flagged.has(i)) {
       dot.classList.add('dot-answered', 'dot-flagged');
-    } else if (answers[i] !== undefined) {
+    } else if (isAnswered) {
       dot.classList.add('dot-answered');
     } else if (flagged.has(i)) {
       dot.classList.add('dot-flagged');
@@ -1044,36 +1155,49 @@ function reviewAnswers() {
 
   questions.forEach((q, i) => {
     const userAnswer = answers[i];
-    const isCorrect  = userAnswer && userAnswer.correct;
-    const isUnanswered = userAnswer === undefined;
+    const isMulti = isMultiSelect(q);
+    const isCorrect = userAnswer && userAnswer.correct;
+    const isUnanswered = isMulti
+      ? (!userAnswer || userAnswer.choiceIdxs.length === 0)
+      : (userAnswer === undefined);
 
     // Use the SAME shuffled order shown during the exam
     const shuffledChoices = q._shuffledChoices || q.choices;
 
-    // Find which position in shuffled array the user actually picked
-    const userPickedIdx = userAnswer
-      ? shuffledChoices.findIndex(c => q.choices.indexOf(c) === userAnswer.choiceIdx)
-      : -1;
-
     // Find correct in shuffled array
-    const correctIdx = shuffledChoices.findIndex(c => c.correct);
+    const correctIdxs = shuffledChoices.map((c, ri) => c.correct ? ri : -1).filter(ri => ri !== -1);
+
+    // Find user's picked position in shuffled array
+    let userPickedIdxs = [];
+    if (userAnswer) {
+      if (isMulti) {
+        userPickedIdxs = userAnswer.choiceIdxs.map(ci =>
+          shuffledChoices.findIndex(c => q.choices.indexOf(c) === ci)
+        ).filter(ri => ri !== -1);
+      } else {
+        const ri = shuffledChoices.findIndex(c => q.choices.indexOf(c) === userAnswer.choiceIdx);
+        if (ri !== -1) userPickedIdxs = [ri];
+      }
+    }
 
     const item = document.createElement('div');
     item.className = 'review-item' + (isUnanswered ? '' : isCorrect ? ' correct-review' : ' wrong-review');
 
-    // Build choices HTML in SHUFFLED order with correct letters
+    // Build choices HTML in SHUFFLED order
     let choicesHTML = '';
     shuffledChoices.forEach((c, ri) => {
-      const letter = LETTERS[ri]; // letter in shuffled position
+      const letter = LETTERS[ri];
       const origIdx = q.choices.indexOf(c);
+      const isCorrectPos = correctIdxs.includes(ri);
+      const isUserPickedPos = userPickedIdxs.includes(ri);
       let cls = 'review-choice';
       let mark = '';
 
-      if (ri === userPickedIdx && ri === correctIdx) {
-        cls += ' user-correct'; mark = ' ✓ Your answer (correct)';
-      } else if (ri === userPickedIdx) {
+      if (isCorrectPos && isUserPickedPos) {
+        cls += ' user-correct'; mark = ' ✓ Correct (your answer)';
+      } else if (isUserPickedPos && !isCorrectPos) {
         cls += ' user-wrong'; mark = ' ✗ Your answer';
-      } else if (ri === correctIdx) {
+      } else if (isCorrectPos) {
         cls += ' correct-answer'; mark = ' ✓ Correct';
       }
 
@@ -1090,7 +1214,7 @@ function reviewAnswers() {
       : '';
 
     item.innerHTML = `
-      <div class="q-num">Question ${i + 1} — ${q.domain || 'General'}</div>
+      <div class="q-num">Question ${i + 1} — ${q.domain || 'General'}${isMulti ? ' [Multi-select]' : ''}</div>
       <div class="q-text">${q.question}</div>
       <div class="review-choices">${choicesHTML}</div>
       ${explanationHTML}

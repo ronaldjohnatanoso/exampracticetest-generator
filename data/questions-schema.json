@@ -72,6 +72,14 @@
             "type": "string",
             "description": "The question text. Supports multi-line strings."
           },
+          "multiSelect": {
+            "type": "boolean",
+            "description": "If true, the question has multiple correct answers. User must select more than one choice."
+          },
+          "selectCount": {
+            "type": "integer",
+            "description": "Required number of correct answers for multi-select questions (e.g. 2). Auto-detected from choices if omitted."
+          },
           "shuffleChoices": {
             "type": "boolean",
             "description": "Shuffle the answer choices for this question",

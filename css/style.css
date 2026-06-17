@@ -714,7 +714,7 @@ body {
 .flagged-panel {
   display: none;
   position: fixed;
-  bottom: 70px;
+  bottom: 130px;
   right: 232px;
   width: 280px;
   background: var(--surface);
@@ -1023,3 +1023,16 @@ body {
 
 .schema-text { color: var(--text-muted); font-size: 0.73rem; }
 .example-text { color: var(--text); font-size: 0.78rem; }
+
+/* Multi-select checkbox style */
+.choice-multiselect {
+  cursor: pointer;
+}
+
+.choice-checkbox {
+  font-size: 1.1rem;
+  line-height: 1;
+  min-width: 24px;
+  text-align: center;
+  color: var(--primary);
+}
