@@ -45,9 +45,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Known question bank files — add new banks here
 const KNOWN_BANKS = [
   { id: 'az305', file: 'data/questions-az305.json' },
-  // Add more banks here, e.g.:
-  // { id: 'az104', file: 'data/questions-az104.json' },
-  // { id: 'az700', file: 'data/questions-az700.json' },
+  { id: 'az104', file: 'data/questions-az104.json' },
+  { id: 'ai103', file: 'data/questions-ai103.json' },
 ];
 
 async function loadManifest() {
