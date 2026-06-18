@@ -1,0 +1,774 @@
+{
+  "title": "AI-103 — Developing AI Apps and Agents on Azure (Azure AI Engineer Associate)",
+  "version": "1.0",
+  "description": "50 hard questions covering Azure AI Foundry, agents, RAG, Azure OpenAI, responsible AI, and more. Updated April 2026.",
+  "timeLimit": 90,
+  "shuffle": true,
+  "passingScore": 70,
+  "domains": [
+    {"name": "Plan and Manage Azure AI Solution", "weight": 27},
+    {"name": "Implement Generative AI & Agentic Solutions", "weight": 33},
+    {"name": "Implement Computer Vision Solutions", "weight": 13},
+    {"name": "Implement Text Analysis Solutions", "weight": 13},
+    {"name": "Implement Information Extraction Solutions", "weight": 13}
+  ],
+  "questions": [
+    {
+      "id": "AI103-001",
+      "domain": "Plan and Manage Azure AI Solution",
+      "multiSelect": false,
+      "question": "You are designing a multi-agent system in Azure AI Foundry where Agent A must route tasks to Agent B based on intent classification, and Agent B must call external APIs to fetch real-time inventory data. Which Foundry component architecture BEST supports this requirement with the lowest latency?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use a single Foundry project with two agent definitions, where Agent A uses a 'transfer' tool to invoke Agent B's endpoint within the same project, and Agent B is registered with a 'function' tool definition for the inventory API.", "correct": true, "explanation": "Within a single Foundry project, agents can invoke each other directly via tool-calling with minimal latency. Registering Agent B as a tool within Agent A's runtime avoids cross-project network hops and reduces latency significantly compared to using a playground or separate project call."},
+        {"text": "Deploy Agent A and Agent B as separate Azure Container Apps and use an Azure Service Bus queue to pass messages between them, enabling loose coupling and independent scaling.", "correct": false, "explanation": "While this is a valid microservices pattern, it introduces significant latency from queue polling, adds architectural complexity, and is not the recommended Foundry-native approach for agent-to-agent orchestration."},
+        {"text": "Use Azure OpenAI's Assistants API with both agents defined as separate assistants, and use a shared Azure Blob Storage account to exchange context between them via JSON files.", "correct": false, "explanation": "File-based context exchange through Blob Storage is slow, non-deterministic, and not a supported Foundry pattern. It also introduces polling overhead and is unsuitable for low-latency real-time inventory lookups."},
+        {"text": "Deploy both agents in the same Azure Kubernetes Service (AKS) cluster and use Kubernetes Service DNS for direct pod-to-pod communication, removing any external network dependency.", "correct": false, "explanation": "While AKS can host AI workloads, this approach bypasses Foundry's managed agent runtime, losing built-in tracing, session management, and tool registration features that Foundry provides out of the box."}
+      ],
+      "explanation": "Foundry's in-project agent invocation via tool definitions is the lowest-latency, most Foundry-native pattern for agent-to-agent communication. It leverages internal Foundry routing without network hops.",
+      "tags": ["agent-orchestration", "foundry", "latency"]
+    },
+    {
+      "id": "AI103-002",
+      "domain": "Plan and Manage Azure AI Solution",
+      "multiSelect": true,
+      "selectCount": 2,
+      "question": "Your team is building a RAG-based conversational agent in Azure AI Foundry that must answer questions about internal HR policy documents. The documents are updated weekly. You need to ensure the agent always retrieves the most current policy content. Which two configuration combinations satisfy this requirement while minimizing operational overhead?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use an Azure AI Search index with an incremental indexer configured on a weekly schedule, pointing to the HR document container in Azure Blob Storage. Enable the indexer's 'enableRetriever' mode so Foundry can query it directly via a semantic retriever tool.", "correct": true, "explanation": "Azure AI Search incremental indexers automatically detect blob changes and re-index only modified content on a schedule. This minimizes compute cost and ensures the index always reflects the latest blob content without full re-indexing."},
+        {"text": "Store documents in OneDrive for Business, and configure the Foundry knowledge base connector to poll for changes every 15 minutes using Microsoft Graph API webhooks.", "correct": false, "explanation": "Microsoft Graph webhooks require app registration, complex OAuth setup, and are not natively supported as a Foundry knowledge base connector. This adds significant integration overhead and is not a recommended pattern."},
+        {"text": "Use a vector index in Azure AI Search with 'data deletion detection' enabled. Drop and recreate the entire index every Monday at 2 AM using a Logic App that calls the indexer reset API before re-uploading all documents.", "correct": false, "explanation": "Dropping and recreating the entire index every week is operationally expensive, causes unnecessary downtime, and eliminates incremental indexing benefits. It also triggers a full re-indexing of all documents which is wasteful."},
+        {"text": "Configure Azure AI Search with a blob indexer set to 'dataChangeDetectionPolicy': 'HighWaterMarkChangeDetectionPolicy' on a 30-minute schedule, and enable the 'delete documentos' flag to handle removed policies automatically.", "correct": true, "explanation": "The HighWaterMark policy tracks changes using a watermark column and only fetches changed documents on each run. Combined with soft delete detection, this is the most efficient and production-recommended indexing strategy for RAG systems."}
+      ],
+      "explanation": "Incremental blob indexers with HighWaterMark change detection and semantic retriever integration provide the best balance of freshness, accuracy, and low operational overhead for RAG knowledge bases in Foundry.",
+      "tags": ["RAG", "azure-ai-search", "indexing"]
+    },
+    {
+      "id": "AI103-003",
+      "domain": "Plan and Manage Azure AI Solution",
+      "multiSelect": false,
+      "question": "You are configuring a multi-modal model in Azure AI Foundry for a solution that processes both scanned PDF invoices (with images and text) and plain-text CSV expense reports. The model must return structured JSON with line-item details. Which model selection and Foundry configuration provides the best accuracy-to-cost ratio?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use GPT-4o with vision capability, sending the PDF invoices as base64-encoded images and the CSV files as raw text in the same conversation. Use a JSON schema instruction in the system prompt to enforce structured output.", "correct": true, "explanation": "GPT-4o's multi-modal capability handles both image-based documents and text in a single API call, reducing the need for separate OCR + parsing pipelines. JSON schema output mode ensures deterministic structured output without additional parsing logic."},
+        {"text": "Deploy a dedicated Computer Vision model for invoice OCR and a separate GPT-3.5-turbo deployment for CSV parsing. Chain them via an Azure Logic App that passes OCR output as text input to the GPT model.", "correct": false, "explanation": "Chaining separate models via Logic App adds significant latency, requires separate deployment management, and increases the per-document cost. It also introduces failure points in the orchestration layer that are unnecessary for this use case."},
+        {"text": "Use GPT-4o-mini for both invoice images and CSV files since it is cheaper than GPT-4o and can handle multi-modal inputs equally well.", "correct": false, "explanation": "GPT-4o-mini does not currently support vision/multi-modal inputs. Multi-modal support is specific to GPT-4o and certain o-series models, not the mini variants."},
+        {"text": "Use Phi-3-medium as a small language model fine-tuned on invoice data, deployed via Foundry Managed Compute, with a pre-processing Azure Function that converts PDFs to markdown using Azure AI Document Intelligence.", "correct": false, "explanation": "Phi-3-medium lacks native multi-modal capabilities and fine-tuning on invoice data is costly and time-consuming. Document Intelligence adds latency and cost and the complexity does not justify the accuracy gain over GPT-4o for this scenario."}
+      ],
+      "explanation": "GPT-4o's native multi-modal support with JSON schema output provides the most accurate, low-latency, and cost-effective solution for mixed document types requiring structured output.",
+      "tags": ["multi-modal", "foundry", "structured-output"]
+    },
+    {
+      "id": "AI103-004",
+      "domain": "Plan and Manage Azure AI Solution",
+      "multiSelect": false,
+      "question": "An enterprise customer is concerned about data exfiltration when their developers use Azure AI Foundry. The security team mandates that no data may leave the customer's Azure region. Which security configuration MUST be in place before any model or agent deployment is created in Foundry?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Enable Azure AI Foundry with a regional scope and select 'No Microsoft-managed keys' to use customer-managed encryption keys stored in Azure Key Vault within the same region. Configure the Foundry project to use a private endpoint.", "correct": true, "explanation": "Private endpoint ensures all Foundry traffic stays on the Microsoft backbone within the customer's virtual network. Customer-managed keys prevent Microsoft from accessing data at rest. Both are required for strict data residency compliance."},
+        {"text": "Set the Azure AI Foundry billing tier to 'Enterprise' which automatically geo-fences all data to the customer's primary region.", "correct": false, "explanation": "Billing tier does not control data residency. Even Enterprise-tier Foundry deployments can route telemetry and model training data to other regions unless explicitly locked down with private networking."},
+        {"text": "Require all developers to use a VPN when accessing the Azure portal, and enable Multi-Factor Authentication on their Microsoft Entra accounts.", "correct": false, "explanation": "VPN and MFA protect access credentials but do not prevent Microsoft-managed services within Foundry from routing inference requests or telemetry to external regions."},
+        {"text": "Use the 'Foundry Local' deployment option which runs entirely within the customer's on-premises infrastructure and does not connect to Microsoft's cloud services.", "correct": false, "explanation": "Foundry Local is for local development and testing only and does not support production agent deployments, model fine-tuning, or enterprise features like role-based access and audit logs."}
+      ],
+      "explanation": "Private endpoints + customer-managed keys in the same region are the foundational requirements for data residency compliance in Azure AI Foundry.",
+      "tags": ["security", "private-endpoint", "data-residency"]
+    },
+    {
+      "id": "AI103-005",
+      "domain": "Plan and Manage Azure AI Solution",
+      "multiSelect": false,
+      "question": "You are monitoring a production Foundry agent that handles customer support conversations. In the Azure portal, you observe that the 'Grounding Quality' score has dropped from 0.92 to 0.67 over the past 48 hours. The agent uses RAG with Azure AI Search. What is the MOST likely root cause and what should you check FIRST?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "The Azure AI Search index is returning stale or irrelevant chunks because the data source (Blob Storage) was updated but the indexer has not yet run, or the indexer's change detection policy failed to detect changes.", "correct": true, "explanation": "A sudden grounding quality drop almost always indicates a retrieval problem — the retriever is pulling outdated or irrelevant context. Checking the indexer status and last sync time is the fastest diagnostic step."},
+        {"text": "The GPT-4 model's temperature was increased by another team member, causing the model to hallucinate more frequently and produce lower-quality answers.", "correct": false, "explanation": "Temperature affects response creativity but does not directly lower the grounding quality score, which measures how well the retrieved context supports the generated answer. Grounding quality is a retrieval metric, not a generation metric."},
+        {"text": "The agent's session memory buffer has overflowed, causing earlier conversation context to be dropped and replaced with irrelevant prior interactions, leading to degraded response quality.", "correct": false, "explanation": "Memory overflow would affect the conversational coherence and context window utilization, but the grounding quality score specifically measures how well the retrieved RAG context matches the query — it is independent of session memory."},
+        {"text": "Azure AI Search's semantic ranker quota was exceeded, causing the search to fall back to standard BM25 ranking which returns less relevant results.", "correct": false, "explanation": "Semantic ranker has usage-based quotas, not hard limits that cause fallback. Even if semantic ranker were unavailable, Azure AI Search would not silently fall back to BM25 without raising an alert — and the quality drop would not be as dramatic as 0.92 to 0.67."}
+      ],
+      "explanation": "Grounding quality measures the semantic relevance of retrieved chunks to the query. A sharp drop almost always means the index is out of sync or the retriever configuration has changed.",
+      "tags": ["monitoring", "grounding", "rag", "azure-ai-search"]
+    },
+    {
+      "id": "AI103-006",
+      "domain": "Plan and Manage Azure AI Solution",
+      "multiSelect": true,
+      "selectCount": 2,
+      "question": "You are designing a cost management strategy for a high-traffic Foundry agent that handles 500,000 inference requests per day. The agent uses GPT-4o for reasoning and a small SLM for classification of intent before routing. Which two cost optimization techniques should you implement at the architecture level?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Route all incoming requests to a Phi-3-mini classification model first to determine intent. Only invoke GPT-4o for requests that require generative reasoning; route simple FAQ queries directly to a cached response from Azure Cache for Redis.", "correct": true, "explanation": "Intent classification with a cheap SLM before GPT-4o invocation dramatically reduces GPT-4o usage. Caching FAQ responses in Redis eliminates redundant inference calls for repeated queries — both are high-impact, low-latency optimizations."},
+        {"text": "Enable Always Free tier for Azure AI Foundry and use the pay-as-you-go model for any overflow traffic beyond the free quota.", "correct": false, "explanation": "Azure AI Foundry does not have an Always Free tier. This option does not exist and implementing it would leave the architecture without a sustainable cost model."},
+        {"text": "Use on-demand provisioning for GPT-4o deployments with auto-scale set to zero during off-peak hours (midnight to 6 AM) to eliminate idle compute costs.", "correct": false, "explanation": "GPT-4o deployments on Azure OpenAI cannot scale to zero — the managed service always maintains at least one instance to handle cold-start latency. Auto-scaling to zero is supported only for serverless compute, not for provisioned deployments."},
+        {"text": "Set per-project spending limits in Azure AI Foundry and configure budget alerts at 50%, 75%, and 90% thresholds so the team is notified before cost overruns occur.", "correct": true, "explanation": "Per-project spending limits cap total expenditure and budget alerts provide early warning. Combined with the routing/caching strategy, this ensures the architecture is both cost-efficient and observable."}
+      ],
+      "explanation": "SLM pre-classification + Redis caching eliminates redundant expensive model calls, and spending limits with alerts provide cost governance without sacrificing quality.",
+      "tags": ["cost-optimization", "slm", "caching", "foundry"]
+    },
+    {
+      "id": "AI103-007",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are building an agent in Azure AI Foundry that must maintain conversation history across 50+ turns for a financial advisory use case. The context window of GPT-4o is 128K tokens but the team is concerned about token costs and latency as the conversation grows. Which memory architecture should you implement?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Implement a sliding window summarization pattern: after every 10 turns, run a background distillation step using GPT-4o-mini to summarize the conversation into a compressed context that replaces the full history in subsequent turns.", "correct": true, "explanation": "Sliding window summarization with a distillation model is the production-standard approach for long conversations. It preserves key facts and intent signals while dramatically reducing token count and inference cost per turn."},
+        {"text": "Store the full conversation history in Azure Cosmos DB and append the entire history to every prompt without summarization, relying on GPT-4o's 128K context window to handle the full load.", "correct": false, "explanation": "Appending full history to every prompt wastes tokens, increases latency, and significantly raises per-turn cost. As conversation length grows, this approach becomes prohibitively expensive even within the context window."},
+        {"text": "Use Azure AI Search to index each conversation turn as a separate document, and use a vector similarity search to retrieve only the most relevant prior turns before each new inference call.", "correct": false, "explanation": "While this sounds appealing, conversational context requires chronological coherence and causal ordering that vector similarity cannot preserve. A conversation about 'selling stock' 10 turns ago and 'buying stock' now could retrieve irrelevant matches."},
+        {"text": "Implement a pure key-value memory store in Azure Table Storage where each turn is stored with a timestamp and session ID, and reconstruct the conversation by fetching turns within a time window.", "correct": false, "explanation": "Table Storage provides persistence but no semantic compression or relevance ranking. The agent would still need to process all turns within the time window, offering no token or latency reduction."}
+      ],
+      "explanation": "Sliding window summarization via distillation model balances token economy, semantic fidelity, and cost — the industry standard for long-conversation agent memory.",
+      "tags": ["memory", "token-optimization", "agent"]
+    },
+    {
+      "id": "AI103-008",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are implementing a tool-calling agent in Azure AI Foundry that must call an internal expense reporting REST API. The API requires an OAuth 2.0 bearer token that expires every 60 minutes. How should you configure the tool definition in Foundry to handle token lifecycle management?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Register the expense API as a 'function' tool in Foundry with an OAuth 2.0 'Active Directory' credential type. Enable 'Auto refresh tokens' in the tool definition and configure the refresh threshold to 5 minutes before expiry.", "correct": true, "explanation": "Foundry's native OAuth 2.0 tool credential supports automatic token refresh with a configurable threshold, eliminating manual token management in agent code. This is the recommended approach for tools requiring bearer token authentication."},
+        {"text": "Hard-code the OAuth bearer token as a secret string in the tool's header configuration in Foundry, and schedule a Logic App to update it every 55 minutes.", "correct": false, "explanation": "Hard-coding tokens is a security anti-pattern. Tokens would be visible in tool configuration, stored in plaintext in Foundry's configuration, and would require external orchestration to rotate — this is exactly what keyless credentials in Foundry are designed to prevent."},
+        {"text": "Store the token in Azure Key Vault and have the agent code retrieve it via a 'key vault read' tool before each API call, refreshing only when a Key Vault error indicates the token is invalid.", "correct": false, "explanation": "This introduces a dependency on agent-side code to manage token refresh logic, adds latency (Key Vault call per request), and requires error-handling in the agent runtime. It also requires the agent to have Key Vault read permissions, expanding its attack surface."},
+        {"text": "Use a Managed Identity on the Foundry project and configure the expense API to accept Microsoft Entra ID tokens issued via the Managed Identity credential. Register this as a 'keyless' tool in Foundry.", "correct": true, "explanation": "Managed Identity with keyless tool registration eliminates the need for manual token management entirely — Foundry handles token acquisition transparently using the project's managed identity. This is more secure and lower maintenance than OAuth credential management."}
+      ],
+      "explanation": "Managed Identity with keyless tool credentials is the most secure and lowest-maintenance approach for internal API authentication in Foundry agents.",
+      "tags": ["tool-calling", "oauth", "managed-identity", "foundry"]
+    },
+    {
+      "id": "AI103-009",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are configuring a Foundry agent that processes customer emails and must extract structured data (sender, date, subject, intent, entities) using a single model call to minimize latency and cost. The output must conform to a predefined JSON schema. Which Foundry configuration meets this requirement?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use the 'structured output' feature of GPT-4o by providing a JSON schema in the tool definition with 'type: function' and 'strict: true'. Configure the agent to use a single 'extract_email_data' function tool call with the email text as input.", "correct": true, "explanation": "GPT-4o's structured output with strict JSON schema enforcement via function tool definitions produces deterministic, schema-conformant JSON without requiring a separate parsing step. A single tool call reduces latency and cost compared to multi-step extraction pipelines."},
+        {"text": "Parse the email using Azure AI Language's key phrase extraction and named entity recognition APIs, then use a separate Azure OpenAI call to generate the final JSON. Chain the results with Azure Data Factory.", "correct": false, "explanation": "Chaining multiple Azure services (Language API + OpenAI + Data Factory) adds significant latency (multiple round trips), increases cost, and introduces unnecessary complexity for a task GPT-4o can perform in a single call with structured output."},
+        {"text": "Use GPT-4o with a detailed prompt instructing the model to output valid JSON, and parse the response manually using regex to extract required fields.", "correct": false, "explanation": "Prompt-based JSON without a schema is unreliable — model output format consistency cannot be guaranteed. Manual regex parsing is brittle, error-prone, and will break on edge cases like nested structures or HTML email content."},
+        {"text": "Deploy a fine-tuned Phi-3 model on the email dataset and use it to generate structured JSON directly from the email text, deployed as a Foundry Managed Online Endpoint.", "correct": false, "explanation": "Fine-tuning a Phi-3 model on email data is expensive, time-consuming, and requires significant labeled training data. For a single-call extraction task, a pre-trained GPT-4o with structured output is faster, cheaper, and more accurate."}
+      ],
+      "explanation": "GPT-4o's structured output with strict JSON schema and a single function tool call is the most accurate, lowest-latency, and lowest-cost approach for email extraction.",
+      "tags": ["structured-output", "foundry", "function-calling"]
+    },
+    {
+      "id": "AI103-010",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": true,
+      "selectCount": 3,
+      "question": "A Foundry agent you deployed is producing hallucinated responses that reference internal policy documents that do not exist in the grounding data. The business requires that all agent responses MUST cite the source documents used to generate the answer. Which three Foundry components must be configured to address this?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Enable ' citation required ' mode in the Foundry agent configuration, which forces the model to include document IDs in the tool call response whenever grounding context is used.", "correct": true, "explanation": "Citation-required mode ensures the model outputs source document references whenever it uses retrieved context. This is the primary configuration needed to enforce source citation in Foundry agent responses."},
+        {"text": "Configure Azure AI Search to return 'score绝对的' (absolute relevance score) for each search result and pass these scores as grounding metadata to the agent's prompt.", "correct": false, "explanation": "Azure AI Search does not return 'absolute relevance scores' — it returns similarity scores that are not directly comparable across queries. Passing raw scores as metadata would not help the model generate accurate citations."},
+        {"text": "Add a 'hallucination guardrail' as a post-processing step in the agent pipeline that checks each response against the retrieved context chunks using a separate evaluator model.", "correct": true, "explanation": "A hallucination guardrail/evaluator compares the generated response against retrieved context chunks and flags or rewrites statements not supported by the evidence. This is the responsible AI instrumentation needed to catch hallucinations before they reach users."},
+        {"text": "Configure Azure Monitor to track 'HallucinationEvent' logs from the Foundry project and trigger an Azure Logic App that automatically disables the agent when hallucination rate exceeds 5%.", "correct": false, "explanation": "Automatically disabling the agent based on hallucination rate is too disruptive and not a standard practice. Hallucination events should trigger review and retuning, not service disruption. Azure Monitor can track these events but the response should be investigative, not destructive."},
+        {"text": "Implement a 'groundedness evaluator' as part of the agent's evaluation loop that runs after each inference, scoring whether the response is supported by the retrieved context chunks, and failing the response if the score is below 0.8.", "correct": true, "explanation": "Groundedness evaluators are a core responsible AI instrumentation tool in Foundry. They score response-context alignment post-inference and can trigger response regeneration or human review when scores fall below threshold."}
+      ],
+      "explanation": "Citation-required mode + groundedness evaluator + hallucination guardrail form the three-layer defense against hallucination: prevention (citation), detection (evaluator), and correction (guardrail).",
+      "tags": ["responsible-ai", "grounding", "hallucination", "foundry"]
+    },
+    {
+      "id": "AI103-011",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are implementing a CI/CD pipeline for a Foundry project that contains multiple agent definitions and model deployments. The pipeline must deploy a new agent version to a staging environment, run integration tests, and promote to production only if all tests pass. Which Foundry-native capability supports this workflow?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Foundry's built-in 'model versions' and 'agent versions' with Azure Pipelines. Export the project configuration as a YAML file via the Foundry CLI, store it in Azure Repos, and use stage-based deployment with a Foundry Deploy task that calls the promotion API only on test success.", "correct": true, "explanation": "Foundry supports YAML-based project export and promotion APIs. Storing project config in source control enables proper versioning and rollback. Azure Pipelines with Foundry Deploy tasks is the recommended CI/CD pattern for Foundry projects."},
+        {"text": "Use Azure Logic Apps with a manual approval step to copy agent configurations from staging to production by calling the Foundry REST API after QA sign-off.", "correct": false, "explanation": "Logic Apps with manual copy steps lacks automated testing, version control, and rollback capability. It is not a proper CI/CD pipeline and does not support the automated promotion gating that the scenario requires."},
+        {"text": "Use GitHub Actions with Foundry's Docker container deployment feature to build a Foundry agent image, push it to Azure Container Registry, and deploy it to both staging and production Kubernetes clusters.", "correct": false, "explanation": "Foundry agents are not deployed as Docker containers through a container registry — they are managed by Foundry's own runtime. This approach bypasses Foundry's managed deployment infrastructure and loses built-in observability and versioning."},
+        {"text": "Use Azure Automation runbooks to schedule a nightly Foundry project export and manually import it to the production workspace the following morning.", "correct": false, "explanation": "Scheduled manual import/export is not a CI/CD pipeline — it lacks automated testing, immediate rollback capability, and version control. It also introduces a night gap between staging validation and production deployment."}
+      ],
+      "explanation": "Foundry YAML export + Azure Pipelines with Foundry Deploy task is the supported, version-controlled, test-gated CI/CD pattern for Foundry agent promotion.",
+      "tags": ["cicd", "foundry", "devops"]
+    },
+    {
+      "id": "AI103-012",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are building a real-time speech-to-text agent using Azure AI Foundry and Azure AI Speech. The agent must transcribe customer support calls, extract the intent, and summarize the outcome. The latency from audio input to summarized output must be under 3 seconds. Which pipeline architecture is most appropriate?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure AI Speech's real-time speech-to-text streaming API with a WebSocket connection to a Foundry agent that processes interim results through GPT-4o-mini for intent classification and a rule-based summarizer for the final summary.", "correct": true, "explanation": "WebSocket streaming with interim results enables real-time processing as speech is recognized. GPT-4o-mini provides fast, low-cost intent classification, and a rule-based summarizer avoids the latency of an additional LLM call for summarization, keeping total latency under 3 seconds."},
+        {"text": "Record the full audio call to Azure Blob Storage, then use Azure AI Speech's batch transcription API to transcribe the entire call, and feed the full transcript to GPT-4o for summarization.", "correct": false, "explanation": "Batch transcription introduces minutes of latency (waiting for the full call to finish and the batch job to complete), making it entirely unsuitable for real-time use cases. This architecture would have latency measured in minutes, not seconds."},
+        {"text": "Use Azure AI Foundry's native Audio AI capability with a multi-modal GPT-4o model that accepts audio directly and outputs text, deployed on a serverless endpoint.", "correct": false, "explanation": "GPT-4o does not natively support audio input as of the current model capabilities. Azure AI Foundry's Audio AI is designed for specific audio analysis use cases, not real-time speech-to-text with the latency requirements described."},
+        {"text": "Use Azure Communication Services (ACS) with its built-in transcription capability, route the transcript to a Logic App that calls GPT-4o for summarization.", "correct": false, "explanation": "ACS transcription has additional overhead from the communication platform layer, and Logic App invocations of GPT-4o add 1-2 seconds of latency each. The total pipeline would likely exceed the 3-second requirement."}
+      ],
+      "explanation": "WebSocket streaming + lightweight SLM classification + rule-based summarization is the only architecture that can reliably achieve sub-3-second latency for real-time speech processing.",
+      "tags": ["real-time", "speech", "streaming", "foundry"]
+    },
+    {
+      "id": "AI103-013",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": true,
+      "selectCount": 2,
+      "question": "Your team has deployed a Foundry agent that uses a RAG pipeline backed by Azure AI Search. During load testing, you observe that the 'Time to First Token' (TTFT) is 8 seconds under peak load for complex queries that retrieve 20+ chunks. Which two optimizations will reduce TTFT most effectively?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Reduce the number of retrieved chunks from 20 to 5 using a higher 'minimumRelevanceScore' threshold in the retriever configuration, and enable 'query caching' in Azure AI Search to cache results for repeated query patterns.", "correct": true, "explanation": "Fewer retrieved chunks means less context to encode and send to the LLM, directly reducing TTFT. Query caching eliminates search latency for repeated queries. Both are high-impact, low-complexity optimizations."},
+        {"text": "Upgrade the Azure AI Search tier from Standard to High Business tier to unlock higher inference throughput and faster neural search algorithms.", "correct": false, "explanation": "Upgrading the AI Search tier improves indexing and search speed, but the dominant latency component in TTFT for RAG is the LLM's time to first token, not the search latency. This would not meaningfully reduce TTFT for complex queries."},
+        {"text": "Implement async chunk retrieval: retrieve chunks in parallel with starting the LLM inference call, passing retrieved chunks to the model as they become available using streaming intermediate updates.", "correct": false, "explanation": "LLMs require all context to be present before they begin generating tokens — they cannot process partial context streaming in real-time. Async chunk retrieval would not reduce TTFT and would add architectural complexity."},
+        {"text": "Use Azure AI Search's semantic retriever with 'semanticCaptions' enabled, which returns only the most relevant sentence-level excerpts per chunk instead of full chunk text, reducing the total context size fed to the LLM.", "correct": true, "explanation": "Semantic captions extract the most relevant sentences from each chunk, dramatically reducing token count while preserving semantic signal. This directly reduces the prompt size sent to the LLM and lowers TTFT."}
+      ],
+      "explanation": "Chunk reduction with semantic captions + query caching are the two most impactful TTFT optimizations for RAG pipelines — they reduce both the LLM input size and eliminate redundant search latency.",
+      "tags": ["rag", "latency", "azure-ai-search", "performance"]
+    },
+    {
+      "id": "AI103-014",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are implementing a multi-turn conversational agent in Foundry that uses three tools: a SQL query tool, a web search tool, and a calendar tool. The agent must decide which tool to use based on the user's intent in a single reasoning step, and must NOT call multiple tools simultaneously. How should you configure the agent's tool strategy?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Configure the agent's 'tool_choice' strategy as 'auto' with a maximum of 1 tool call per inference turn. Set the tool calling mode to 'sequential' to ensure only one tool is called at a time.", "correct": true, "explanation": "'auto' tool choice lets the model decide which tool to invoke based on intent. Limiting to 1 tool per turn with sequential mode enforces the single-tool-per-turn constraint required by the business logic."},
+        {"text": "Register all three tools in Foundry and enable 'parallel' tool calling mode so the model can call all relevant tools simultaneously and aggregate the results faster.", "correct": false, "explanation": "Parallel tool calling would allow the model to invoke multiple tools simultaneously, which violates the requirement that only one tool should be called per turn. This configuration does not meet the stated constraint."},
+        {"text": "Use a separate 'orchestrator' agent that receives user input, classifies intent using GPT-4o-mini, and then calls the appropriate sub-agent. Register each tool as a separate sub-agent with its own agent definition.", "correct": false, "explanation": "While this is a valid multi-agent pattern, it introduces an additional orchestration layer and LLM call per turn, increasing latency and cost. With only three tools, a single agent with tool choice constraints is simpler and equally effective."},
+        {"text": "Configure the agent with 'required' tool choice mode, which forces the model to always call a tool even for greetings and general conversation, ensuring consistent single-tool behavior.", "correct": false, "explanation": "'required' tool choice forces tool calls for every turn, even when no tool is needed (e.g., 'thank you'). This would degrade user experience and add unnecessary inference costs for non-tool interactions."}
+      ],
+      "explanation": "'auto' tool choice with 1-max-per-turn and sequential mode is the correct configuration for a single-tool-per-turn agent strategy.",
+      "tags": ["tool-calling", "agent", "foundry"]
+    },
+    {
+      "id": "AI103-015",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are deploying an Azure OpenAI GPT-4o model via Azure AI Foundry for a customer-facing API. Your security team requires that API keys be rotated every 30 days without downtime. The API is called 10,000 times per day. Which keyless authentication pattern meets this requirement?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Microsoft Entra ID authentication with a service principal. Configure the service principal's secret to auto-expire in 30 days via Entra ID conditional access policies, and use Azure Key Vault's Key Vault References in API Management to retrieve the current credential without downtime.", "correct": true, "explanation": "Entra ID service principals with conditional access-enforced secret expiry provide automatic 30-day rotation without code changes. Key Vault references allow API Management to fetch the current secret without restart or downtime. This is the production-standard pattern for keyless credential rotation."},
+        {"text": "Store the API key in Azure Key Vault as a secret, and configure a Logic App to call the Key Vault API to retrieve the current key every 29 days, then push it to API Management.", "correct": false, "explanation": "This requires a Logic App to manage rotation, which is an external dependency. If the Logic App fails or misfires, the key expires without rotation. It also requires API Management to be restarted or reconfigured to pick up the new key."},
+        {"text": "Disable API key authentication and use a long-lived OAuth client credential token stored in the application's environment variables, refreshing only when the application is redeployed.", "correct": false, "explanation": "Long-lived tokens stored in environment variables are a security anti-pattern. Environment variables persist in logs, crash dumps, and container images. Manual refresh on redeployment is operationally brittle and introduces downtime risk."},
+        {"text": "Use Azure AI Foundry's built-in 'API Key Regeneration' feature which automatically rotates keys every 30 days by updating the deployment's key without requiring any configuration on the consumer side.", "correct": false, "explanation": "Azure AI Foundry does not have an automatic API key regeneration feature. Foundry uses Microsoft Entra ID for authentication in its managed endpoints, not API keys for the endpoint itself."}
+      ],
+      "explanation": "Entra ID service principals with Key Vault-backed secret rotation via conditional access is the only seamless, zero-downtime, compliant key rotation pattern for Azure OpenAI endpoints.",
+      "tags": ["keyless", "authentication", "key-vault", "azure-openai"]
+    },
+    {
+      "id": "AI103-016",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": true,
+      "selectCount": 2,
+      "question": "You are implementing a Foundry agent that must process documents containing PII (Personally Identifiable Information) before storing them in a RAG knowledge base. The solution must redact PII during the ingestion pipeline. Which two Azure services should you use in the ingestion pipeline to achieve this?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure AI Document Intelligence to extract text and detect PII entities (names, SSNs, addresses) during the document parsing stage, before chunks are sent to Azure AI Search.", "correct": true, "explanation": "Azure AI Document Intelligence's PII detection skill can identify and annotate PII entities during document processing. Redacting at the ingestion stage ensures no PII ever enters the search index, which is the most secure approach."},
+        {"text": "Use Azure Purview to scan the Azure AI Search index for PII after indexing is complete, and trigger an alert when PII is detected so an operator can manually redact it.", "correct": false, "explanation": "Scanning after indexing means PII has already been stored in the index — it has already been exposed. This is a detective control, not a preventive control, and does not meet the requirement to redact PII during ingestion."},
+        {"text": "Use Azure AI Search's built-in 'PII Redaction' skill as part of the cognitive search enrichment pipeline to automatically mask detected PII entities in indexed content before storage.", "correct": true, "explanation": "Azure AI Search's enrichment pipeline supports a PII Redaction skill that automatically masks detected PII entities (replacing them with [PII] tags or hashes) before the content is indexed. This is the native, integrated approach for RAG pipelines."},
+        {"text": "Deploy a custom Azure Functions app that uses a regex-based PII detector to scan chunks before they are pushed to the search index, and quarantine any chunks containing PII to a separate Blob Storage container for manual review.", "correct": false, "explanation": "Regex-based PII detection is far less accurate than Azure AI Document Intelligence's ML-based NER (Named Entity Recognition) for PII detection. Regex would miss context-dependent PII and produce both false positives and false negatives."}
+      ],
+      "explanation": "Document Intelligence's PII detection + Azure AI Search's PII Redaction enrichment skill provide a layered, ML-based, preventive PII removal pipeline at ingestion time.",
+      "tags": ["pii", "data-governance", "rag", "azure-ai-search"]
+    },
+    {
+      "id": "AI103-017",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are configuring a Foundry agent that must handle overflow from a customer support call center after business hours. The agent must be able to escalate to a human agent by creating a ticket in ServiceNow. Which integration pattern is most reliable and requires the least custom code?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Register ServiceNow as a 'webhook' tool in Foundry. When the agent determines escalation is needed, it calls the ServiceNow webhook with structured JSON payload (customer ID, transcript summary, intent), and ServiceNow's webhook trigger creates the ticket automatically.", "correct": true, "explanation": "Webhook tool registration in Foundry is a native, no-code integration that sends an HTTP POST to any service that accepts webhooks. ServiceNow supports incoming webhooks via its 'Create Record' REST API triggered by an inbound webhook. This is the lowest-code, most reliable escalation pattern."},
+        {"text": "Have the agent write escalation requests to an Azure Service Bus queue, and deploy an Azure Logic App that polls the queue and creates a ServiceNow ticket when a message arrives.", "correct": false, "explanation": "Logic App polling introduces latency (polls may not run instantly) and adds an unnecessary queue intermediary. The queue provides reliability but for escalation, near-real-time creation is preferred. A direct webhook call is simpler and faster."},
+        {"text": "Export the conversation transcript to Azure Blob Storage and send an email notification to the support team with a link to the transcript, expecting them to manually create a ServiceNow ticket.", "correct": false, "explanation": "Manual escalation via email is slow, unreliable, and error-prone. The requirement is to create a ServiceNow ticket automatically, not to notify humans who then create tickets manually."},
+        {"text": "Use Azure Event Grid with a ServiceNow connector plugin to route escalation events from Foundry to ServiceNow via an event subscription.", "correct": false, "explanation": "Event Grid with a ServiceNow connector is designed for IT automation scenarios, not for direct agent-to-ticket creation. The connector requires significant configuration and is overkill for a simple escalation scenario."}
+      ],
+      "explanation": "Foundry webhook tool → ServiceNow inbound webhook is the lowest-code, near-real-time, reliable escalation pattern requiring no custom integration code.",
+      "tags": ["agent-escalation", "tool-integration", "foundry"]
+    },
+    {
+      "id": "AI103-018",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "Your Foundry project's RAG agent is producing responses with incorrect technical specifications when users ask about product manuals. The search index uses Azure AI Search with a vector index using cosine similarity. You discover that cosine similarity is ranking short, generic chunks higher than longer, more specific chunks that actually contain the answer. Which retriever configuration change addresses this issue?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Enable 'semantic ranking' in Azure AI Search on the vector index. This re-ranks initial vector search results using a cross-lingual semantic model that considers contextual relevance beyond pure vector similarity, giving higher rank to more specific longer chunks.", "correct": true, "explanation": "Pure cosine similarity on vectors favors shorter, generic chunks with fewer tokens (closer to the centroid). Semantic ranking applies a second-stage ML re-ranking that considers contextual relevance, query-context matching, and chunk informativeness — exactly what's needed to surface detailed technical specs over generic summaries."},
+        {"text": "Increase the 'k' value in the vector search from 5 to 20 to retrieve more chunks, reasoning that a higher volume of results will increase the chance that the correct chunk is included.", "correct": false, "explanation": "Increasing k retrieves more chunks but does not change the ranking logic. More generic short chunks at the top would still dominate, and adding more irrelevant chunks would dilute the context quality fed to the LLM."},
+        {"text": "Switch from cosine similarity to Euclidean distance as the vector distance metric in the Azure AI Search indexer configuration.", "correct": false, "explanation": "Euclidean distance also favors shorter vectors (points closer to the origin) and does not inherently prefer longer, more informative chunks. Changing the distance metric without re-encoding the chunks would not solve the ranking problem."},
+        {"text": "Re-chunk all documents using a larger chunk size (from 512 to 2048 tokens) to ensure each chunk contains more detailed information and is more likely to be relevant.", "correct": false, "explanation": "Larger chunks can reduce precision — the retrieved context may include irrelevant surrounding text that dilutes the answer. A better approach is semantic re-ranking combined with keeping smaller, well-delimited chunks."}
+      ],
+      "explanation": "Semantic ranking as a second-stage re-ranker on top of vector search is the correct solution for improving the relevance ranking of technical specification chunks.",
+      "tags": ["vector-search", "rag", "azure-ai-search", "semantic-ranking"]
+    },
+    {
+      "id": "AI103-019",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are building a Foundry agent that must route user queries to one of 50 different knowledge base topics based on the user's intent. Each topic has its own RAG pipeline and Azure AI Search index. What is the most cost-effective and lowest-latency routing strategy?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use a fast lightweight classification model (GPT-4o-mini or Phi-3-mini) to classify the user's query into one of the 50 topics using a single, short inference call. Pass the classified topic ID to a Foundry routing agent that only invokes the corresponding RAG pipeline.", "correct": true, "explanation": "A lightweight classification call (typically under 100ms and under $0.001) before the main RAG pipeline ensures only the correct index is queried. This avoids the cost and latency of running all 50 RAG pipelines in parallel or sequentially."},
+        {"text": "Run all 50 RAG pipelines in parallel and use Azure AI Search's federated search to merge results, returning the most relevant from any index in a single response.", "correct": false, "explanation": "Running 50 RAG pipelines in parallel would require 50 simultaneous Azure AI Search queries and 50 simultaneous LLM inference calls. The cost and latency would be catastrophic — this is not a production-viable approach."},
+        {"text": "Use a single unified Azure AI Search index that contains all 50 topics' documents, with a 'topic' metadata field on each chunk. Use filtered search to retrieve only chunks matching the classified topic.", "correct": true, "explanation": "A unified index with topic filtering is actually MORE cost-effective than separate indexes — it avoids 49 redundant search infrastructure instances. A single AI Search resource with filtered search handles all 50 topics at a fraction of the cost and complexity."},
+        {"text": "Use Azure Event Grid to receive the user query and route it to the appropriate Azure Function, which then invokes the correct RAG pipeline based on a topic mapping stored in Cosmos DB.", "correct": false, "explanation": "Event Grid + Azure Functions + Cosmos DB adds significant infrastructure complexity and latency for what is essentially a classification problem. The routing logic should be handled by the model, not by external orchestration."}
+      ],
+      "explanation": "Lightweight classification model + unified index with topic filtering is the most cost-effective and lowest-latency routing strategy for multi-topic RAG systems.",
+      "tags": ["routing", "rag", "foundry", "classification"]
+    },
+    {
+      "id": "AI103-020",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are deploying a new version of a Foundry agent. In production, the new version is generating responses with a 15% lower groundedness score than the previous version in the staging environment. Before rolling back, what is the FIRST diagnostic step you should take?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Review the Azure AI Foundry evaluation traces for the new version to compare the specific query-response pairs that caused the groundedness score drop, focusing on whether the retrieval step is returning different chunks than the previous version.", "correct": true, "explanation": "Evaluation traces provide the query, retrieved chunks, and generated response for each test case. Comparing traces between versions immediately reveals whether the regression is in the retriever (different chunks) or the model (same chunks, worse response). This is the fastest root cause isolation step."},
+        {"text": "Immediately roll back to the previous agent version since the groundedness score drop indicates a critical quality regression that poses a risk of harmful outputs.", "correct": false, "explanation": "A 15% groundedness drop is significant but not necessarily a safety risk requiring immediate rollback. Groundedness measures response-context alignment, not output harmfulness. A measured diagnostic approach should precede rollback to understand the root cause."},
+        {"text": "Increase the 'temperature' parameter of the new model deployment to introduce more variability in responses and see if the groundedness score improves across multiple runs.", "correct": false, "explanation": "Increasing temperature increases randomness and hallucinations, which would further decrease groundedness scores. Temperature adjustment is a tuning parameter, not a diagnostic step."},
+        {"text": "Re-run the entire evaluation dataset against the previous version to confirm the baseline score has not changed due to upstream data source modifications.", "correct": false, "explanation": "Re-running against the previous version confirms the baseline, but if the baseline is stable, you still haven't identified why the new version regressed. The priority is understanding the new version's failure mode, not re-confirming the old version's performance."}
+      ],
+      "explanation": "Foundry evaluation traces are the primary diagnostic tool for agent regressions — they isolate whether the regression originated in retrieval or generation before deciding on rollback vs. retuning.",
+      "tags": ["evaluation", "groundedness", "foundry", "debugging"]
+    },
+    {
+      "id": "AI103-021",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are implementing a real-time agent in Azure AI Foundry that processes customer messages and must respond within 1 second for a chatbot use case. The agent uses GPT-4o for response generation with a 5-chunk RAG context. Under peak load, latency spikes to 4 seconds. Which configuration change addresses the peak load latency issue MOST effectively?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Switch to GPT-4o-mini for response generation, which has significantly lower latency than GPT-4o while maintaining acceptable quality for conversational responses. Keep the RAG context at 5 chunks.", "correct": true, "explanation": "GPT-4o-mini has substantially lower TTFT and completion latency than GPT-4o due to its smaller parameter count. For conversational responses with short RAG context, quality difference is minimal. This single change can reduce end-to-end latency from 4s to well under 1s."},
+        {"text": "Increase the number of Azure AI Search replicas from 1 to 3 to distribute the search load and reduce retrieval latency under peak load.", "correct": false, "explanation": "Azure AI Search replicas improve query throughput, but the search retrieval step typically accounts for <200ms of the total latency. The dominant factor at peak load is LLM inference time, not search latency."},
+        {"text": "Reduce the RAG context from 5 chunks to 1 chunk to minimize the prompt size sent to the model.", "correct": false, "explanation": "Reducing to 1 chunk may hurt answer quality for complex queries. A better trade-off is 3 chunks, but the bigger impact comes from switching to a faster model rather than starving the model of context."},
+        {"text": "Enable Azure OpenAI's 'global batch' deployment type which processes inference requests in batches to maximize throughput at lower latency for conversational workloads.", "correct": false, "explanation": "Global batch is designed for asynchronous, non-real-time batch workloads (like document processing) where latency is not critical. It is not suitable for real-time chatbot responses which require immediate streaming output."}
+      ],
+      "explanation": "Switching to GPT-4o-mini is the single most impactful latency optimization for real-time conversational agents — it can cut latency by 60-80% without sacrificing conversational quality.",
+      "tags": ["latency", "performance", "gpt-4o-mini", "real-time"]
+    },
+    {
+      "id": "AI103-022",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "Your Foundry agent must process a user's uploaded PDF document, extract a specific table from it, and answer questions about the table data. The agent's current pipeline downloads the PDF, sends it to Document Intelligence, then sends results to GPT-4o. Which improvement reduces the total processing time most significantly?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Document Intelligence's 'layout' model API to extract the table in a single call, then use GPT-4o with a JSON input mode that accepts the structured table data directly as a JSON object, eliminating the need to send the entire PDF or a rendered image.", "correct": true, "explanation": "Document Intelligence's layout API extracts tables as structured JSON objects. Sending structured JSON to GPT-4o's JSON mode is faster (fewer tokens than base64 PDF or image encoding) and more accurate (no OCR errors from image conversion). This two-step structured approach is faster and more reliable than PDF-to-image pipelines."},
+        {"text": "Upgrade from Document Intelligence to a Computer Vision OCR service to speed up the document parsing step before sending to GPT-4o.", "correct": false, "explanation": "Computer Vision OCR is less accurate than Document Intelligence for structured documents and tables. Upgrading from Document Intelligence to a less capable OCR service would decrease accuracy and not meaningfully improve latency."},
+        {"text": "Use Azure AI Foundry's native document parsing tool which directly extracts text, tables, and figures from uploaded PDFs without requiring a separate Document Intelligence call.", "correct": false, "explanation": "Azure AI Foundry does not have a native document parsing tool that replaces Document Intelligence. Document Intelligence is the Microsoft-recommended service for structured document extraction in Foundry pipelines."},
+        {"text": "Use GPT-4o's native document input mode which accepts PDFs directly and internally processes them using built-in Computer Vision, eliminating the need for Document Intelligence entirely.", "correct": false, "explanation": "GPT-4o does not natively accept PDF file uploads as of current capabilities. Multi-modal GPT-4o accepts image inputs (PNG, JPEG), not PDF files directly. Document Intelligence is still required to convert PDF pages to images or extract structured data."}
+      ],
+      "explanation": "Document Intelligence layout extraction → GPT-4o JSON mode is the fastest, most accurate pipeline for table extraction from PDFs, eliminating image encoding overhead.",
+      "tags": ["document-intelligence", "rag", "table-extraction", "foundry"]
+    },
+    {
+      "id": "AI103-023",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are implementing an agent that uses Azure OpenAI's function calling to execute database queries. The function schema requires a 'table_name' parameter that must be one of 5 valid tables, and a 'query' parameter that must be a valid SQL WHERE clause. The agent is frequently generating invalid SQL. How should you constrain the function schema to prevent invalid outputs?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure OpenAI's enhanced function calling with 'enum' type for the 'table_name' parameter listing all 5 valid tables, and a JSON Schema 'pattern' regex for the 'query' parameter to enforce basic SQL WHERE clause syntax.", "correct": true, "explanation": "Enum constraints on table_name prevent table name hallucination. Regex pattern on the query parameter enforces structural constraints on the SQL WHERE clause. Together these significantly reduce invalid SQL generation while still allowing the model flexibility to construct queries."},
+        {"text": "Remove the function calling capability and instead instruct the model to generate SQL in plain text, then use a server-side whitelist of allowed SQL queries pre-approved by the database team.", "correct": false, "explanation": "Pre-approved query whitelist defeats the purpose of a dynamic query agent — it cannot answer arbitrary questions about the data. The agent needs to generate queries dynamically, not from a fixed whitelist."},
+        {"text": "Set the function schema's 'query' parameter type to 'string' with no constraints, and validate the generated SQL in the tool implementation by catching exceptions and returning an error to the agent for regeneration.", "correct": false, "explanation": "Post-generation SQL validation adds a round-trip — the model generates invalid SQL, the tool fails, the agent retries. This increases latency, costs extra inference calls, and is a worse user experience than constraining the schema upfront."},
+        {"text": "Use a maximum of 3 retrieved chunks in the RAG context, each containing only the table schema and sample queries for the current domain, to minimize the chance of the model generating cross-database queries.", "correct": false, "explanation": "Limiting RAG context to schema information is good practice, but it does not constrain the function schema itself — the model can still generate any SQL string. Schema-level constraints are the proper mechanism for preventing invalid outputs in function calling."}
+      ],
+      "explanation": "Enum + regex JSON Schema constraints on the function tool definition are the proper way to reduce hallucinated function parameters in Azure OpenAI function calling.",
+      "tags": ["function-calling", "sql", "hallucination", "azure-openai"]
+    },
+    {
+      "id": "AI103-024",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are designing a Foundry agent for an insurance company that processes claims. The agent must NEVER provide a claims decision — it may only provide information and escalate. You need to implement a guardrail that prevents the agent from outputting any text that could be interpreted as a claims decision. Which guardrail pattern should you implement?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Implement a 'content filter' guardrail in the Foundry agent pipeline that uses a classifier model to detect decision-oriented language (approve, deny, reject, accept liability) in the agent's response before it is returned to the user. If detected, replace the response with a templated escalation message and create a ServiceNow ticket.", "correct": true, "explanation": "A content classification guardrail that detects decision language is the correct preventive control for a non-decision-making agent. Combining detection with automatic templated replacement and escalation ensures the guardrail both prevents harm and triggers the appropriate human review."},
+        {"text": "Add a system prompt instruction stating 'You are not authorized to make claims decisions. If asked, direct the user to the claims department.' and rely on the model's inherent instruction-following to prevent decision outputs.", "correct": false, "explanation": "System prompt instructions alone are not sufficient guardrails for high-stakes compliance scenarios. LLMs can occasionally override system instructions, especially under adversarial or edge-case inputs. A programmatic guardrail is required for compliance."},
+        {"text": "Deploy a separate 'decision classifier' agent that reviews each response from the main agent before delivery, using a binary classification model to determine if the response contains a decision.", "correct": false, "explanation": "A separate classifier agent adds significant latency (an extra LLM call per response), increasing cost and response time. A lightweight classifier model or rule-based content filter is faster and more appropriate for a simple binary check."},
+        {"text": "Configure Azure AI Content Safety as a pre-processing filter that evaluates the user's input for intent to obtain a claims decision and blocks the request before it reaches the agent.", "correct": false, "explanation": "Azure AI Content Safety evaluates user input for harmful content, not agent output for decision language. It is not designed to detect whether an agent's response constitutes a claims decision."}
+      ],
+      "explanation": "A content classification guardrail in the agent pipeline is the correct, low-latency, high-accuracy pattern for preventing prohibited output types in production agent deployments.",
+      "tags": ["guardrails", "responsible-ai", "compliance", "foundry"]
+    },
+    {
+      "id": "AI103-025",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are implementing a Foundry agent that queries a SQL database using text-to-SQL function calling. The database schema contains 200 tables. When you pass the full schema to the model, token costs are excessive and latency is high. What is the BEST approach for schema handling?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Implement dynamic schema retrieval: for each user query, use a lightweight schema linker model to identify the 2-3 most relevant tables based on keyword and semantic similarity, and pass only those tables' schemas to the main model for SQL generation.", "correct": true, "explanation": "Dynamic schema retrieval (schema-on-demand) is the production standard for text-to-SQL with large schemas. A lightweight linker identifies relevant tables, and only their schemas are included in the prompt. This dramatically reduces token count and improves query accuracy by removing irrelevant schema noise."},
+        {"text": "Split the 200 tables into 10 topic-based groups and create a separate agent for each group. Use a routing classifier to determine which group to invoke based on the user's query.", "correct": false, "explanation": "Splitting into 10 agents and routing adds significant architectural complexity and maintenance overhead. It also doesn't solve the schema problem within each agent — each agent still needs to handle potentially 20 tables efficiently."},
+        {"text": "Create a single unified schema view in the database that joins all 200 tables into one wide denormalized table, and pass this view schema to the model.", "correct": false, "explanation": "A denormalized 200-table join would produce a schema with hundreds of columns, which is as confusing to the model as the original 200 tables. It also creates a performance nightmare for any generated SQL query."},
+        {"text": "Use Azure AI Search to index all 200 table schemas as documents, and use vector similarity search to retrieve the relevant schema context for each query.", "correct": true, "explanation": "Schema indexing via vector search is an alternative production pattern for dynamic schema retrieval — it handles semantic matching well (e.g., 'customer orders' matches 'SalesOrders' table even without keyword overlap). It is equally valid to dynamic schema linking."}
+      ],
+      "explanation": "Dynamic schema retrieval (via a linker model or vector search) is the industry standard for text-to-SQL with large schemas — it reduces tokens, lowers latency, and improves accuracy by eliminating irrelevant schema context.",
+      "tags": ["text-to-sql", "schema-linking", "foundry"]
+    },
+    {
+      "id": "AI103-026",
+      "domain": "Implement Computer Vision Solutions",
+      "multiSelect": false,
+      "question": "You are building a quality inspection system for a manufacturing plant using Azure AI Foundry. The system must detect surface defects on manufactured parts in real time (under 500ms per part) as parts move on a conveyor belt. Which Azure service configuration provides the lowest latency for this inference workload?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Deploy a custom vision model as an ONNX model via Azure AI Foundry Managed Online Endpoints with auto-scale configured to the minimum 1 instance. Use a GPU-accelerated VM SKU (NDv2 series) for the deployment, and configure input preprocessing to resize images to 640x640 before inference.", "correct": true, "explanation": "Managed Online Endpoints with GPU acceleration and optimized ONNX preprocessing are the lowest-latency configuration for real-time vision inference in Azure AI Foundry. NDv2 GPUs provide high throughput for vision models, and auto-scaling ensures cost efficiency during low-traffic periods."},
+        {"text": "Use Azure AI Foundry's Computer Vision API to process images by sending them to the cloud-based Computer Vision service, which returns defect annotations within the required latency window.", "correct": false, "explanation": "Azure AI Computer Vision is a cloud-hosted, shared-service API designed for general-purpose image analysis. It introduces network round-trip latency (typically 200-500ms) and is not designed for real-time manufacturing conveyor belt speeds."},
+        {"text": "Deploy a vision model on Azure IoT Edge devices at the factory floor, with inference running locally on industrial-grade GPU edge devices, and stream results to Azure AI Foundry for logging via Azure Event Hubs.", "correct": false, "explanation": "Azure IoT Edge with local inference does provide lowest latency, but the question asks about Azure AI Foundry specifically. Foundry Managed Online Endpoints with GPU instances are the Foundry-native approach for low-latency inference. IoT Edge is a separate compute target."},
+        {"text": "Use Azure AI Foundry's batch inference capability with a queue-based processing architecture to handle images as they arrive from the conveyor belt cameras.", "correct": false, "explanation": "Batch inference is designed for offline, bulk processing of large image datasets — it is fundamentally incompatible with real-time, sub-second latency requirements on a conveyor belt."}
+      ],
+      "explanation": "Managed Online Endpoints with GPU-accelerated ONNX inference is the lowest-latency Foundry-native option for real-time vision workloads, with auto-scale ensuring cost efficiency.",
+      "tags": ["computer-vision", "real-time", "foundry", "inference"]
+    },
+    {
+      "id": "AI103-027",
+      "domain": "Implement Computer Vision Solutions",
+      "multiSelect": false,
+      "question": "You are using Azure AI Foundry to build an image classification model that categorizes products into 50 classes. You have 5,000 labeled images across the 50 classes. Training accuracy reaches 94% but validation accuracy plateaus at 71%. What is the MOST likely cause and the correct remedy?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "The model is overfitting due to insufficient training data per class (100 images per class on average is too small for 50-class classification). The correct remedy is to apply transfer learning using a pre-trained ResNet-50 backbone from Azure AI Foundry's model catalog and fine-tune only the classification head with aggressive data augmentation.", "correct": true, "explanation": "5,000 images across 50 classes (100 per class) is a small dataset that leads to overfitting, especially for a model trained from scratch. Transfer learning with a pre-trained ResNet-50 backbone leverages representations learned from ImageNet, and fine-tuning only the head (with augmentation to artificially expand the effective dataset) is the correct remedy."},
+        {"text": "The validation set contains mislabeled images causing artificially low validation accuracy. Review and correct the validation set labels.", "correct": false, "explanation": "While mislabeled validation data is possible, a 23% gap between training and validation accuracy is far too large to be explained solely by label noise. This pattern is classic overfitting due to insufficient data diversity."},
+        {"text": "The model architecture is too deep for the task. Replace ResNet with a shallower network like MobileNet to reduce the number of parameters and prevent overfitting.", "correct": false, "explanation": "MobileNet is designed for efficiency, not for improving generalization on small datasets. A shallower network would still overfit on 100 images per class. The correct approach is transfer learning with a pre-trained backbone, not switching architectures."},
+        {"text": "Increase the learning rate to accelerate convergence and break through the validation accuracy plateau.", "correct": false, "explanation": "A higher learning rate would likely destabilize training and could cause training accuracy to drop as well. The validation plateau is a data problem, not a learning rate problem."}
+      ],
+      "explanation": "A 23% train-validation gap on 100 images per class is textbook overfitting. Transfer learning with a pre-trained backbone and aggressive augmentation is the standard fix.",
+      "tags": ["computer-vision", "transfer-learning", "overfitting", "foundry"]
+    },
+    {
+      "id": "AI103-028",
+      "domain": "Implement Computer Vision Solutions",
+      "multiSelect": false,
+      "question": "You are deploying a custom object detection model (YOLOv8) to detect safety vests on a construction site. The model must run on edge devices with limited compute (NVIDIA Jetson). Which deployment optimization technique ensures the best inference speed while maintaining acceptable mAP?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Export the YOLOv8 model to ONNX format with FP16 precision, and use TensorRT optimization on the Jetson device to compile the model for the Jetson's GPU architecture, enabling INT8 quantization with a calibration dataset.", "correct": true, "explanation": "TensorRT with INT8 quantization on Jetson is the most effective optimization for edge deployment of object detection models. FP16 provides a good accuracy-speed tradeoff, and INT8 with calibration further accelerates inference while maintaining acceptable mAP (typically <1% mAP drop). ONNX is the correct interchange format for this pipeline."},
+        {"text": "Deploy the model in Azure AI Foundry's serverless managed endpoint and configure the edge device to stream video frames to the cloud endpoint over 5G for inference, then relay the detection results back to the edge device.", "correct": false, "explanation": "Cloud inference for real-time construction site monitoring is impractical — 5G latency and cloud inference time combined would add multiple seconds of delay per frame, making real-time safety alerting impossible."},
+        {"text": "Use the original YOLOv8 PyTorch model with standard weights, and run inference using the Jetson's CPU instead of the GPU to avoid TensorRT compilation complexity.", "correct": false, "explanation": "Running YOLOv8 on a Jetson CPU is 5-10x slower than GPU with TensorRT, making it unsuitable for real-time safety vest detection. CPU inference defeats the purpose of using a Jetson device."},
+        {"text": "Apply post-training quantization using PyTorch's dynamic quantization API to convert the model weights to INT8, and deploy the quantized model directly without calibration.", "correct": false, "explanation": "Dynamic quantization without calibration is significantly less accurate than INT8 quantization with calibration. For object detection, accuracy loss without calibration would be unacceptable (potentially 5-10% mAP drop). Calibration with a representative dataset is essential for maintaining mAP."}
+      ],
+      "explanation": "ONNX + TensorRT with INT8 calibration is the gold-standard edge deployment optimization for YOLO models on NVIDIA Jetson, providing the best accuracy-speed tradeoff for real-time inference.",
+      "tags": ["edge-inference", "tensorrt", "yolo", "computer-vision"]
+    },
+    {
+      "id": "AI103-029",
+      "domain": "Implement Computer Vision Solutions",
+      "multiSelect": false,
+      "question": "You are using Azure AI Foundry to train a custom vision model for defect detection. The product team reports that the model is too slow in production even after optimization. Investigation reveals that input images are 4096x4096 resolution but the model only needs 512x512 for accurate detection. What is the MOST effective speed improvement technique?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Add a preprocessing pipeline stage before the model inference that uses bicubic interpolation to resize images from 4096x4096 to 512x512. Deploy this preprocessing as a serverless Azure Functions app that runs on the same virtual network as the Foundry endpoint to minimize latency.", "correct": true, "explanation": "Resizing 4096x4096 to 512x512 reduces pixel count by 64x, dramatically reducing inference time. Bicubic interpolation preserves more image detail than bilinear resizing. Offloading preprocessing to a serverless function keeps it decoupled from the model inference pipeline and allows independent scaling."},
+        {"text": "Use a super-resolution model to upsample a smaller 128x128 crop of the original image to 512x512 before inference, which preserves more detail than direct downsampling while keeping the input small.", "correct": false, "explanation": "Super-resolution adds an extra inference step (the super-resolution model itself), increasing total processing time. For defect detection where spatial detail matters, upsampling a crop also loses the global context available in the full 4096x4096 image."},
+        {"text": "Use Azure AI Foundry's built-in 'Smart Resize' feature which automatically resizes images to the optimal resolution for the deployed model without any additional preprocessing configuration.", "correct": false, "explanation": "Azure AI Foundry does not have a 'Smart Resize' feature. This is not a real Foundry capability. Image resizing must be explicitly configured in the preprocessing pipeline."},
+        {"text": "Re-train the model to accept 4096x4096 inputs directly, since downsampling before training causes the model to be inaccurate at the original resolution.", "correct": false, "explanation": "Training at 512x512 and inferring at 512x512 is the correct approach — the model was designed for that resolution. Forcing the model to accept 4096x4096 inputs would require architectural changes and would dramatically slow inference due to 64x more pixels being processed."}
+      ],
+      "explanation": "Downsampling to the model's native resolution with bicubic interpolation is the simplest, highest-impact optimization — 64x fewer pixels means proportionally faster inference with no accuracy loss.",
+      "tags": ["preprocessing", "image-resize", "inference-speed", "foundry"]
+    },
+    {
+      "id": "AI103-030",
+      "domain": "Implement Computer Vision Solutions",
+      "multiSelect": false,
+      "question": "You are evaluating a custom image segmentation model deployed in Azure AI Foundry. The model must detect cracks in concrete surfaces. On a test set of 1,000 images, overall accuracy is 89% but the model performs poorly on thin, hairline cracks. What technique should you apply to improve performance on thin crack detection?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Apply class-balanced oversampling of thin crack images in the training set, and use a loss function with a higher weight for the crack class (such as Focal Loss) to force the model to focus more on hard, thin crack examples.", "correct": true, "explanation": "Thin cracks are a minority class problem — they occupy fewer pixels and contribute less to standard cross-entropy loss. Class-balanced oversampling addresses the data imbalance, and Focal Loss down-weights easy background pixels and up-weights hard crack pixels, improving thin crack detection without changing the model architecture."},
+        {"text": "Apply test-time augmentation (TTA) with horizontal and vertical flips at inference time to increase the effective resolution of thin crack detection by averaging predictions over multiple augmentations.", "correct": false, "explanation": "TTA with flips does not improve thin crack detection — a horizontal flip doesn't reveal new thin cracks that weren't visible in the original orientation. TTA helps with rotation invariance but does not address the core detection difficulty of thin crack classes."},
+        {"text": "Increase the input image resolution from 512x512 to 1024x1024 so the model can see thinner crack details that were previously sub-sampled.", "correct": false, "explanation": "Higher resolution increases computation 4x but the model's architecture may not be designed for 1024x1024 inputs. The better approach is a training-side fix (class balancing + Focal Loss) that specifically addresses the thin crack class without increasing inference cost."},
+        {"text": "Replace the segmentation model with an instance segmentation model (like Mask R-CNN) which provides per-crack bounding boxes and masks, making thin cracks easier to distinguish from background texture.", "correct": false, "explanation": "Mask R-CNN is slower and more complex than a standard segmentation model and would increase inference time significantly. For thin crack detection specifically, a training-side class balancing fix is faster to implement and equally effective."}
+      ],
+      "explanation": "Class-balanced oversampling + Focal Loss is the most effective training-side fix for minority class detection problems like thin cracks in segmentation models.",
+      "tags": ["segmentation", "class-imbalance", "focal-loss", "computer-vision"]
+    },
+    {
+      "id": "AI103-031",
+      "domain": "Implement Text Analysis Solutions",
+      "multiSelect": false,
+      "question": "You are building a sentiment analysis solution using Azure AI Foundry that must classify customer feedback into Positive, Negative, Neutral, and Mixed sentiment. The solution must handle negations accurately (e.g., 'not good' should be classified as Negative, not Positive). Which Azure AI service and configuration should you use?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure AI Language's Sentiment Analysis API with the 'opinion mining' feature enabled. Opinion mining specifically handles negation by analyzing the relationship between sentiment targets and their associated opinion words, correctly classifying 'not good' as Negative.", "correct": true, "explanation": "Azure AI Language's opinion mining (aspect-based sentiment analysis) explicitly models the relationship between targets and opinions, including negation handling. It returns per-aspect sentiment with negation detection, which is more accurate for nuanced feedback than a simple document-level sentiment API."},
+        {"text": "Use the base Azure AI Language Sentiment Analysis API (without opinion mining) with a custom system prompt instructing the model to handle negations, deployed via Azure AI Foundry.", "correct": false, "explanation": "The base Sentiment Analysis API provides only document-level sentiment and does not support negation handling. Custom prompts in Foundry are for agent prompts, not for the Language API which is a standalone REST service."},
+        {"text": "Fine-tune a Phi-3-mini model on 2,000 labeled customer feedback examples including negation patterns, and deploy it as a Foundry Managed Online Endpoint.", "correct": false, "explanation": "Fine-tuning Phi-3-mini for simple 4-class sentiment classification is expensive, time-consuming, and unnecessary — Azure AI Language's opinion mining handles negation correctly out of the box without any fine-tuning."},
+        {"text": "Use Azure AI Foundry's Text Analysis API with a custom text classification model trained on the company's labeled feedback data, with a pre-processing step that replaces negation words with a token '[NEG]' to help the model learn negation patterns.", "correct": false, "explanation": "Azure AI Foundry does not have a standalone 'Text Analysis API' — it uses Azure AI Language services. Custom token replacement is a valid pre-processing technique, but the opinion mining API already handles this without custom workarounds."}
+      ],
+      "explanation": "Azure AI Language's opinion mining is the correct, zero-custom-code solution for negation-aware sentiment analysis — it is specifically designed for this use case.",
+      "tags": ["sentiment-analysis", "negation", "language", "azure-ai-language"]
+    },
+    {
+      "id": "AI103-032",
+      "domain": "Implement Text Analysis Solutions",
+      "multiSelect": false,
+      "question": "You are building a Named Entity Recognition (NER) solution in Azure AI Foundry to extract person names, company names, and product names from legal documents. You have 500 labeled documents. Which approach provides the best accuracy for this low-data scenario?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure AI Language's custom NER feature, which supports few-shot learning with as few as 100 labeled entities. Upload the 500 documents with entity annotations and use the built-in transformer-based NER model which leverages Microsoft's pre-trained legal language model for better few-shot accuracy.", "correct": true, "explanation": "Azure AI Language's custom NER uses Microsoft's pre-trained legal language model and supports few-shot learning — it performs well with as few as 100 labeled entity examples by leveraging transfer learning from the pre-trained base. This is the lowest-effort, highest-accuracy approach for low-data NER scenarios."},
+        {"text": "Fine-tune a BERT-based model on the 500 labeled documents using Azure AI Foundry's model fine-tuning feature, with a custom token classification head for NER.", "correct": false, "explanation": "Fine-tuning BERT on 500 documents for NER is possible but would take significant time and ML expertise. Azure AI Language's custom NER with few-shot learning achieves comparable accuracy without the fine-tuning overhead."},
+        {"text": "Use GPT-4o with few-shot prompting by providing 5 examples of entity extraction in the system prompt, and use the model's inherent NER capability without any custom training.", "correct": false, "explanation": "GPT-4o's zero/few-shot NER is not as accurate as a dedicated NER model for specialized domains like legal documents. GPT-4o may hallucinate entity types and lacks the consistent token-level labeling required for legal NER."},
+        {"text": "Use Azure AI Language's pre-built NER model which recognizes person, organization, and location entities out of the box without any custom training.", "correct": false, "explanation": "The pre-built NER model recognizes only generic person, organization, and location entities — it does not recognize domain-specific entity types like specific legal product names or case references, which is the requirement here."}
+      ],
+      "explanation": "Azure AI Language custom NER with few-shot learning leverages pre-trained legal language models and requires minimal labeled data, providing the best accuracy-to-effort ratio for domain-specific NER.",
+      "tags": ["ner", "few-shot", "azure-ai-language", "legal"]
+    },
+    {
+      "id": "AI103-033",
+      "domain": "Implement Text Analysis Solutions",
+      "multiSelect": false,
+      "question": "You are implementing a text summarization solution using Azure AI Foundry for meeting transcripts. The summaries must be extractive (verbatim sentences from the transcript) to ensure legal compliance. Which approach ensures only extractive summarization?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure AI Language's extractive summarization API which is specifically designed to return sentences extracted verbatim from the input text, preserving original wording and ensuring legal traceability.", "correct": true, "explanation": "Azure AI Language's extractive summarization uses a supervised model trained to select the most important existing sentences from the input. It does not generate new text — it returns verbatim sentences from the transcript, which is exactly what legal compliance requires."},
+        {"text": "Use GPT-4o's instruction-following capability by prompting it with 'Summarize the following transcript using ONLY sentences from the transcript. Do not generate new sentences.' and rely on instruction compliance to prevent abstractive output.", "correct": false, "explanation": "LLMs can occasionally abstract even when explicitly instructed not to — instruction compliance is probabilistic, not guaranteed. For legal compliance requirements where verbatim transcription is mandatory, relying on LLM instruction-following is insufficient."},
+        {"text": "Fine-tune a T5 model on extractive summarization data and deploy it as a Foundry Managed Online Endpoint with temperature set to 0 to force deterministic output.", "correct": false, "explanation": "Fine-tuning T5 for extractive summarization is expensive and time-consuming. Temperature=0 ensures deterministic output but does not guarantee extractive behavior — the model can still generate sentences not present in the original text."},
+        {"text": "Use Azure AI Foundry's abstractive summarization feature but apply a post-processing guardrail that checks each generated sentence against the original transcript using string matching, and removes any sentence that is not a verbatim match.", "correct": false, "explanation": "Post-processing with string matching would strip out legitimate abstractive content that adds value, and would fail to catch paraphrased sentences that are semantically similar but not verbatim — a legal audit would still find non-verbatim content."}
+      ],
+      "explanation": "Azure AI Language's extractive summarization API is the only solution that guarantees verbatim sentence extraction — it is architecturally incapable of generating new text, making it the only legally compliant option.",
+      "tags": ["summarization", "extractive", "legal", "azure-ai-language"]
+    },
+    {
+      "id": "AI103-034",
+      "domain": "Implement Text Analysis Solutions",
+      "multiSelect": false,
+      "question": "You are building a text classification solution in Azure AI Foundry that must classify support tickets into 100 categories with a minimum accuracy of 92%. You have 10,000 labeled tickets. The model achieves 94% accuracy during training but only 83% on validation. Which technique most directly addresses this gap?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Apply label smoothing (e.g., smoothing factor of 0.1) during training to prevent the model from becoming overconfident on training examples, which reduces the train-validation gap by regularizing the model's confidence calibration.", "correct": true, "explanation": "Label smoothing is specifically designed to address overconfidence — the model's high training accuracy but lower validation accuracy indicates it has memorized training labels rather than learning generalizable features. Label smoothing regularizes the model's confidence and improves generalization."},
+        {"text": "Increase the training data size by applying simple synonym replacement data augmentation to double the number of training examples.", "correct": false, "explanation": "Synonym replacement augmentation for text classification does not meaningfully expand the effective feature space — the augmented sentences still convey the same classification signal. It may slightly help but does not directly address the overfitting indicated by the 11% gap."},
+        {"text": "Reduce the model size by switching from a 12-layer transformer to a 6-layer transformer to reduce the number of trainable parameters and prevent overfitting.", "correct": false, "explanation": "Reducing model depth is a valid regularization technique but is a more drastic architectural change than needed. With 10,000 examples and 100 classes (100 per class on average), a 12-layer model is not unreasonably large — label smoothing is a more targeted fix."},
+        {"text": "Switch from fine-tuning to few-shot prompting with GPT-4o-mini using 5 examples per category, which will generalize better with limited data.", "correct": false, "explanation": "100 categories × 5 examples = 500 examples in the prompt context. This exceeds GPT-4o-mini's effective few-shot capacity and would result in token count inflation, higher latency, and lower per-class accuracy than fine-tuning on 10,000 labeled examples."}
+      ],
+      "explanation": "Label smoothing directly addresses the overconfidence/overfitting pattern — training accuracy 94% vs validation 83% is a clear signal that the model has memorized training labels. Label smoothing regularizes this.",
+      "tags": ["text-classification", "overfitting", "label-smoothing", "fine-tuning"]
+    },
+    {
+      "id": "AI103-035",
+      "domain": "Implement Text Analysis Solutions",
+      "multiSelect": false,
+      "question": "You are implementing a multi-language text classification solution using Azure AI Foundry that must classify support tickets in English, Spanish, French, and German. You have 50,000 labeled English tickets but only 200 per language for the other three languages. How should you approach this?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use a cross-lingual transfer learning approach: fine-tune a multilingual BERT model (like mBERT or Microsoft's multilingual XLM-RoBERTa) on the 50,000 English tickets, then use zero-shot cross-lingual transfer to classify Spanish, French, and German tickets using the English-trained model without additional training data.", "correct": true, "explanation": "Multilingual transformer models (XLM-RoBERTa, mBERT) learn shared cross-lingual representations during pre-training — a model fine-tuned on English can generalize to other languages in a zero-shot setting. This leverages the 50,000 English examples to cover all four languages without requiring labeled data in the other languages."},
+        {"text": "Use Azure AI Translator to translate all non-English tickets to English before classification, then use the English classifier on the translated text.", "correct": false, "explanation": "Translation introduces errors and loss of nuance, especially for colloquial support ticket language. It also adds latency (translation API call per ticket) and cost. Cross-lingual transfer with multilingual models is more accurate and does not require an intermediate translation step."},
+        {"text": "Train four separate models — one for each language — using only the 200 examples per language, accepting that the lower data volume will result in lower accuracy for non-English languages.", "correct": false, "explanation": "Training separate models with only 200 examples per language would result in very poor accuracy for those languages. With 100 categories and only 200 examples, each category would have only 2 examples on average — far too little data for meaningful classification."},
+        {"text": "Fine-tune separate GPT-4o models for each language using few-shot prompting with 200 examples each, relying on GPT-4o's inherent multilingual capability.", "correct": false, "explanation": "Fine-tuning GPT-4o is extremely expensive and impractical for 100-category classification with only 200 examples per language. The API cost per ticket would be prohibitive, and few-shot with 200 examples is beyond what even GPT-4o can effectively leverage."}
+      ],
+      "explanation": "Cross-lingual transfer with multilingual XLM-RoBERTa trained on English and zero-shot transferred to other languages is the most cost-effective and accurate approach for low-data multilingual classification.",
+      "tags": ["multilingual", "cross-lingual", "transfer-learning", "text-classification"]
+    },
+    {
+      "id": "AI103-036",
+      "domain": "Implement Text Analysis Solutions",
+      "multiSelect": false,
+      "question": "You are building a key phrase extraction pipeline for product reviews using Azure AI Foundry. The product team needs to extract multi-word product feature phrases (e.g., 'battery life', 'screen resolution', 'photo quality') rather than single words. Which Azure AI Language configuration achieves this most accurately?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure AI Language's Key Phrase Extraction API with 'max frases per document' set to 20 and 'model version' set to '2023-11-01-preview' which supports multi-word phrase detection via n-gram modeling.", "correct": false, "explanation": "Azure AI Language's Key Phrase Extraction extracts key phrases but does not have a preview flag for n-gram modeling. Standard key phrase extraction tends to extract single words rather than multi-word phrases by default."},
+        {"text": "Use Azure AI Language's Custom Text Classification feature with a custom extraction model trained on labeled product reviews where multi-word phrases are annotated as single entities, and deploy the model via Foundry.", "correct": false, "explanation": "Custom Text Classification is for document classification, not key phrase extraction. It classifies entire documents into categories, not extract phrases from within documents."},
+        {"text": "Use a custom NER model in Azure AI Language trained on product reviews where multi-word product feature phrases are annotated as a single 'ProductFeature' entity type.", "correct": true, "explanation": "Custom NER is the correct tool for extracting multi-word domain-specific phrases — annotating 'battery life' as a single 'ProductFeature' entity teaches the model to recognize multi-word phrases as atomic units. This is the most accurate approach for domain-specific multi-word extraction."},
+        {"text": "Use GPT-4o with few-shot prompting by providing 10 examples of product reviews with their multi-word feature phrases highlighted in brackets, and instruct the model to extract all product feature phrases from new reviews.", "correct": false, "explanation": "GPT-4o few-shot prompting can extract multi-word phrases but is inconsistent — the same phrase may be extracted differently across reviews due to LLM non-determinism. For production systems requiring consistent, structured extraction, a custom NER model is more reliable."}
+      ],
+      "explanation": "Custom NER with annotated multi-word phrases as single entities is the most accurate and production-reliable approach for domain-specific key phrase extraction in Azure AI Language.",
+      "tags": ["key-phrase-extraction", "ner", "custom-language", "product-analysis"]
+    },
+    {
+      "id": "AI103-037",
+      "domain": "Implement Information Extraction Solutions",
+      "multiSelect": false,
+      "question": "You are building an information extraction solution in Azure AI Foundry to extract structured data from unstructured purchase orders. The solution must extract: vendor name, invoice number, line items (item description, quantity, unit price), and total amount. Which pipeline architecture provides the best accuracy for this structured document extraction?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure AI Document Intelligence with the 'prebuilt-invoice' model to extract all required fields in a single API call, since the prebuilt-invoice model is specifically trained on invoices with these exact field types and achieves higher accuracy than a custom model.", "correct": true, "explanation": "Azure AI Document Intelligence's prebuilt-invoice model is trained on millions of invoices and natively extracts vendor name, invoice number, line items (with description, quantity, unit price), and total amount. It achieves higher accuracy than custom models for these standard invoice fields because of its extensive pre-training."},
+        {"text": "Use Azure AI Foundry's document parsing agent that sends the purchase order PDF to GPT-4o with a schema definition, and parse the JSON response to extract the required fields.", "correct": false, "explanation": "GPT-4o's document parsing is not as accurate as Document Intelligence's prebuilt-invoice model for standard invoice fields. GPT-4o can hallucinate field values and is not trained specifically on invoice layouts, making it less reliable for structured field extraction."},
+        {"text": "Use Azure AI Document Intelligence with a custom model trained on 200 labeled purchase orders, since the volume of purchase orders is small and the prebuilt model may not generalize well to the company's specific format.", "correct": false, "explanation": "Document Intelligence prebuilt-invoice is trained on a wide variety of invoice formats. For standard fields like vendor name, invoice number, and line items, it generalizes better than a custom model trained on only 200 examples. Custom models are for non-standard document types, not standard invoices."},
+        {"text": "Use Azure AI Language's custom entity extraction with 500 labeled purchase orders, and train a custom extraction model to handle the company's specific layout.", "correct": false, "explanation": "Azure AI Language's custom entity extraction is designed for text-based NER tasks, not for structured document layout extraction. It cannot extract line item quantities and unit prices from table structures in purchase orders."}
+      ],
+      "explanation": "Document Intelligence prebuilt-invoice is the correct tool for invoice extraction — it is pre-trained on millions of invoices and natively handles all required fields with higher accuracy than custom models or LLM-based extraction.",
+      "tags": ["document-intelligence", "information-extraction", "invoices", "prebuilt"]
+    },
+    {
+      "id": "AI103-038",
+      "domain": "Implement Information Extraction Solutions",
+      "multiSelect": false,
+      "question": "You are building a solution to extract structured data from government agency forms that have highly variable layouts and no standard template. The forms contain handwritten fields in addition to printed text. Which approach provides the best accuracy?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure AI Document Intelligence with the 'Layout' model which handles variable layouts, and enable the 'handwritten' text recognition option to extract both printed and handwritten text from the forms in a single pass.", "correct": true, "explanation": "Azure AI Document Intelligence's Layout model is specifically designed for variable-layout documents. It supports combined OCR of printed and handwritten text, table detection, and structure recognition in a single API call, making it the best fit for highly variable government forms."},
+        {"text": "Use Azure AI Foundry's Computer Vision OCR service to extract text from the forms, then use GPT-4o to parse the extracted text and structure it into the required schema.", "correct": false, "explanation": "Azure AI Foundry does not have its own Computer Vision OCR service — Computer Vision is a separate Azure service. Even if OCR is used, chaining OCR output to GPT-4o for parsing introduces error propagation (OCR errors compound with LLM parsing errors) and is less accurate than Document Intelligence's single-pass approach."},
+        {"text": "Use Azure AI Language's custom NER to extract entities from the forms after a separate OCR preprocessing step using Azure Computer Vision.", "correct": false, "explanation": "Custom NER works only on text, not on document structure or handwritten fields. This approach requires two separate services (OCR + Language) with error propagation between them. Document Intelligence handles both in a single integrated pipeline."},
+        {"text": "Fine-tune a LayoutLMv3 model on labeled government form images using Azure AI Foundry's custom model training, which combines text and layout understanding in a single multimodal model.", "correct": false, "explanation": "Fine-tuning LayoutLMv3 requires significant labeled training data, ML expertise, and compute time. For standard government form field extraction, Document Intelligence's Layout model is faster, cheaper, and equally accurate without fine-tuning."}
+      ],
+      "explanation": "Document Intelligence Layout model with handwritten OCR is purpose-built for variable-layout documents with mixed handwritten and printed text — it handles both in a single, highly accurate pass.",
+      "tags": ["document-intelligence", "ocr", "handwriting", "forms"]
+    },
+    {
+      "id": "AI103-039",
+      "domain": "Implement Information Extraction Solutions",
+      "multiSelect": false,
+      "question": "You are building a PII extraction pipeline using Azure AI Foundry that must extract names, addresses, phone numbers, and Social Security Numbers from unstructured text. The pipeline must run in real time (under 100ms per document) and must NOT miss any SSN. Which approach best balances speed and accuracy?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure AI Language's built-in PII detection API which uses a dedicated PII NER model optimized for high recall on SSN detection, deployed as a serverless endpoint with built-in caching for sub-100ms latency on repeated document patterns.", "correct": true, "explanation": "Azure AI Language's PII detection is a purpose-built, pre-trained model for PII entities including SSN. It is optimized for high recall (not missing SSNs) and is deployed as a serverless API with Azure's infrastructure, providing reliable sub-100ms latency with caching for repeated content."},
+        {"text": "Use GPT-4o with a system prompt instructing it to identify and extract all PII from the document, and set temperature to 0 for deterministic output.", "correct": false, "explanation": "GPT-4o with temperature=0 is not deterministic for entity extraction — temperature controls token probability, not entity completeness. GPT-4o may still miss SSNs, especially in unstructured text. It is also far too slow (hundreds of milliseconds per call) for the 100ms requirement."},
+        {"text": "Use a regex-based extraction pattern for SSN detection (\\d{3}-\\d{2}-\\d{4}) combined with a rule-based parser for other PII field types, deployed as an Azure Function.", "correct": false, "explanation": "Regex SSN detection misses SSNs written without dashes (e.g., '1234567890' or '123 45 6789') and cannot detect names, addresses, or phone numbers at all without extensive rule authoring. This hybrid approach does not meet the all-field PII extraction requirement."},
+        {"text": "Use Azure AI Foundry's Custom NER model trained on 5,000 labeled PII examples, deployed as a Managed Online Endpoint with auto-scale configured to 1 minimum instance.", "correct": false, "explanation": "Custom NER training on 5,000 examples is expensive and time-consuming, and a custom model may have lower recall on SSNs than the pre-built PII model which is trained on billions of examples. For a common entity type like SSN, the pre-built model is both faster and more accurate."}
+      ],
+      "explanation": "Azure AI Language's pre-built PII detection is the fastest, most accurate approach for PII extraction — it is purpose-built for high recall on SSN detection and provides sub-100ms serverless inference.",
+      "tags": ["pii", "ner", "azure-ai-language", "real-time"]
+    },
+    {
+      "id": "AI103-040",
+      "domain": "Implement Information Extraction Solutions",
+      "multiSelect": false,
+      "question": "You are building a form understanding solution that must extract data from medical intake forms. The forms contain checkboxes, radio buttons, signature fields, and typed text. The solution must maintain a chain of custody for legal compliance. Which Azure service combination meets these requirements?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure AI Document Intelligence with the 'Layout' model to extract checkboxes, radio buttons, signatures, and typed text. Enable 'Document Intelligence's 'audit trail' feature which records the extraction source location (page number, bounding box) for each extracted field, maintaining chain of custody for legal compliance.", "correct": true, "explanation": "Document Intelligence's Layout model extracts all form element types including checkboxes, radio buttons, and signatures. The audit trail with bounding box coordinates provides legal chain of custody by pinpointing the exact source location of each extracted data point in the original document."},
+        {"text": "Use Azure AI Foundry's Computer Vision API to detect form elements and OCR the text, then use Azure AI Language's custom NER to extract structured fields. Maintain chain of custody by storing the original document in Azure Blob Storage with immutable blob versioning enabled.", "correct": false, "explanation": "Immutable blob versioning maintains document integrity but does not record which part of the document each extracted data point came from. Chain of custody for form extraction requires field-level source attribution (bounding boxes), not just document-level integrity."},
+        {"text": "Use Azure AI Foundry's built-in 'Form Recognizer' agent which natively handles checkboxes, radio buttons, and signatures, and automatically generates a compliance audit log as part of its standard output.", "correct": false, "explanation": "Azure AI Foundry does not have a built-in 'Form Recognizer' agent — this is not a real Foundry capability. Document Intelligence is the Azure service for form understanding and must be explicitly integrated."},
+        {"text": "Use Azure Purview's sensitive data scanning to identify PII fields in the medical forms, and use Azure Logic Apps to route form data to the appropriate downstream system based on Purview's classification results.", "correct": false, "explanation": "Azure Purview is a data catalog and governance tool, not a form extraction service. It scans already-extracted data for PII, it cannot extract form fields from scanned documents."}
+      ],
+      "explanation": "Document Intelligence Layout + audit trail is the only combination that handles all form element types AND provides field-level source attribution for legal chain of custody compliance.",
+      "tags": ["document-intelligence", "forms", "chain-of-custody", "legal"]
+    },
+    {
+      "id": "AI103-041",
+      "domain": "Plan and Manage Azure AI Solution",
+      "multiSelect": false,
+      "question": "Your team is deploying a Foundry project that will be used by 10 different business units within the same Azure subscription. Each business unit must have isolation from others — they must not be able to see or access each other's agents, model deployments, or usage data. Which Foundry project structure and RBAC configuration meets this requirement?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Create 10 separate Foundry projects, one per business unit, within the same Azure subscription. Assign each business unit's service principal the 'Foundry Project Member' role scoped to their specific project only. Enable 'project-level isolation' mode in the Foundry subscription settings.", "correct": true, "explanation": "Foundry projects are the isolation boundary — usage data, agent definitions, and model deployments are scoped to a project. Creating separate projects with project-scoped RBAC assignments ensures complete data and access isolation between business units. The 'Foundry Project Member' role grants agent and model access without cross-project visibility."},
+        {"text": "Create a single Foundry project and use Azure AI Search's 'index-level access control' to restrict each business unit's RAG data to only their index, relying on search-level isolation for data separation.", "correct": false, "explanation": "Search index isolation does not prevent business units from seeing each other's agent definitions, model deployments, or evaluation traces. It only restricts data access at the search index level — other project resources remain shared."},
+        {"text": "Create separate Azure subscriptions for each business unit, each with its own Foundry project, and use Azure Lighthouse to allow a central IT team to manage all subscriptions from a single management tenant.", "correct": false, "explanation": "Separate subscriptions provide complete isolation but are expensive and operationally complex to manage. Azure Lighthouse enables cross-subscription management but the 10 Foundry project structure within a single subscription with scoped RBAC is more cost-effective and easier to manage."},
+        {"text": "Use Microsoft Entra ID tenant isolation by creating a separate Entra tenant for each business unit, and configure Foundry to trust only tokens from the respective tenant.", "correct": false, "explanation": "Multi-tenant Entra ID configuration for Foundry is not supported as a business unit isolation mechanism. Foundry's project-scoped RBAC is the supported and designed isolation boundary for multi-team scenarios."}
+      ],
+      "explanation": "Separate Foundry projects with project-scoped RBAC is the designed, supported isolation pattern for multi-team Foundry deployments within a single subscription.",
+      "tags": ["foundry", "rbac", "isolation", "multi-tenant"]
+    },
+    {
+      "id": "AI103-042",
+      "domain": "Plan and Manage Azure AI Solution",
+      "multiSelect": false,
+      "question": "You are implementing a monitoring dashboard for a Foundry agent using Azure Monitor. The agent handles 1,000 requests per hour. The security team requires the ability to audit who made each request and what model was invoked. Which Azure Monitor configuration provides the necessary auditability?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Enable Azure AI Foundry's built-in diagnostic logging with the 'DatazzActivity' log category, which records the user principal, request timestamp, model deployment invoked, token count, and latency for every inference request. Route these logs to a Log Analytics workspace and configure a workbook for audit reporting.", "correct": true, "explanation": "Azure AI Foundry's 'DataActivity' diagnostic log category is specifically designed for audit compliance — it records principal identity, deployment, and token usage per request. Routing to Log Analytics enables KQL queries for security audit reports, satisfying the security team's requirement for per-request accountability."},
+        {"text": "Enable Azure Monitor's standard 'Activity Log' which records all Azure resource management operations like resource creation and deletion, and query the logs for audit compliance.", "correct": false, "explanation": "Azure Activity Logs record management-plane operations (resource create/delete, policy changes), not inference-plane operations (who called which model). They do not track per-request identity and model invocation — a separate diagnostic log setting is required."},
+        {"text": "Use Azure AI Foundry's usage reporting dashboard which shows aggregate token usage by project over time, which is sufficient for audit compliance.", "correct": false, "explanation": "Aggregate usage dashboards show total token consumption but not per-request identity. This is a billing metric, not an audit log. The security team requires per-request traceability, not aggregate reporting."},
+        {"text": "Implement application-level logging in the agent code: before each model call, log the user principal and model name to Azure SQL Database, and query this database for audit reports.", "correct": false, "explanation": "Application-level logging requires custom code changes, risks log loss if the application crashes before logging, and duplicates functionality that Foundry already provides natively via diagnostic logs. Custom logging is a last resort, not a first choice when native audit logging exists."}
+      ],
+      "explanation": "Foundry's 'DataActivity' diagnostic logs + Log Analytics is the native, complete, compliance-grade audit trail for AI inference workloads — it records every request's identity, model, and usage without custom code.",
+      "tags": ["monitoring", "audit", "azure-monitor", "foundry"]
+    },
+    {
+      "id": "AI103-043",
+      "domain": "Plan and Manage Azure AI Solution",
+      "multiSelect": true,
+      "selectCount": 2,
+      "question": "Your organization is adopting Azure AI Foundry and you need to ensure compliance with the EU AI Act for a hiring screening agent that evaluates job applications. The agent uses a RAG pipeline with candidate CVs as the knowledge base. Which two requirements must you implement to comply with the EU AI Act's transparency obligations?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Implement a 'human oversight' mechanism that requires a human recruiter to review and approve the agent's screening recommendation before any candidate is rejected or advanced, preventing fully automated decisions.", "correct": true, "explanation": "The EU AI Act requires meaningful human oversight for high-risk AI systems, including hiring screening. The agent can assist but cannot make final rejection/advancement decisions without human review. This is a mandatory requirement for this use case."},
+        {"text": "Log every RAG retrieval event to an immutable audit log stored in Azure Blob Storage with legal hold, recording which CV chunks were retrieved for each candidate to enable post-hoc explainability.", "correct": true, "explanation": "EU AI Act requires that AI-assisted decisions be explainable to affected persons. Recording which CV content was used to generate a screening recommendation enables the explainability obligation — candidates have the right to understand why an AI system flagged their application."},
+        {"text": "Fine-tune the hiring agent model on the organization's historical hiring decisions to improve accuracy, which reduces the risk of biased outcomes that the EU AI Act prohibits.", "correct": false, "explanation": "Fine-tuning on historical hiring decisions is extremely risky — if the historical data contains demographic biases (as most historical data does), fine-tuning amplifies those biases. This could violate the EU AI Act's prohibition on discriminatory AI, not satisfy it."},
+        {"text": "Deploy the hiring agent in a dedicated Azure region within the EU to ensure all candidate data remains in EU territory, satisfying data residency requirements.", "correct": false, "explanation": "EU data residency is handled by GDPR, not the EU AI Act directly. While residency is important, it is a data protection requirement, not an AI transparency obligation. The question specifically asks about EU AI Act transparency, not data residency."}
+      ],
+      "explanation": "EU AI Act compliance for high-risk hiring AI requires: (1) human-in-the-loop oversight preventing fully automated decisions, and (2) retrieval-level audit logging enabling post-hoc explainability to affected candidates.",
+      "tags": ["eu-ai-act", "responsible-ai", "compliance", "hiring"]
+    },
+    {
+      "id": "AI103-044",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are implementing an agent in Azure AI Foundry that must respond to user queries about the company's product catalog. The catalog is stored in Azure Cosmos DB and is updated in real time by the e-commerce platform. The agent's RAG pipeline is indexing from a daily-synced Blob Storage snapshot, causing responses to be stale for up to 24 hours. How should you fix the staleness issue?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Replace the Blob Storage snapshot pipeline with a change feed integration: configure Cosmos DB's change feed to push new and updated product records directly to Azure AI Search indexer in near-real-time (typically under 1 minute), eliminating the daily batch lag.", "correct": true, "explanation": "Cosmos DB change feed provides near-real-time (sub-minute) notification of document changes. Connecting the change feed directly to the AI Search indexer eliminates the 24-hour batch lag, ensuring the RAG index reflects current catalog state without intermediate Blob Storage snapshots."},
+        {"text": "Increase the Blob Storage sync frequency from daily to every 15 minutes using an Azure Data Factory pipeline that re-uploads changed records to Blob Storage on a quarter-hourly schedule.", "correct": false, "explanation": "Quarter-hourly Blob Storage sync still introduces up to 15 minutes of staleness and adds Data Factory as a new dependency. A direct Cosmos DB change feed integration is simpler, faster, and eliminates the intermediate storage layer entirely."},
+        {"text": "Add a 'cache invalidation' step to the agent pipeline that checks the last-modified timestamp of product records in Cosmos DB and includes this timestamp in the agent's prompt, instructing the model to flag if the queried information appears stale.", "correct": false, "explanation": "Prompt-based staleness detection is unreliable — the model cannot determine if a price changed 2 hours ago without seeing the current price. This approach doesn't fix staleness, it asks the model to guess about it."},
+        {"text": "Configure Azure AI Search indexer to use 'live mode' which queries Cosmos DB directly on every RAG retrieval request, bypassing the blob snapshot entirely.", "correct": false, "explanation": "Azure AI Search indexers do not have a 'live mode' that queries the source on every retrieval request. Indexers work by materializing indexed content — they don't perform live source queries at retrieval time."}
+      ],
+      "explanation": "Cosmos DB change feed → AI Search indexer in near-real-time is the production-standard pattern for eliminating batch pipeline lag in RAG systems backed by change-feed-capable databases.",
+      "tags": ["rag", "cosmos-db", "change-feed", "real-time"]
+    },
+    {
+      "id": "AI103-045",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are designing a multi-agent system in Azure AI Foundry where Agent Alpha routes customer requests to either Agent Beta (technical support), Agent Gamma (billing), or Agent Delta (shipping). Each sub-agent uses a different RAG pipeline. If a user's request spans multiple domains (e.g., both technical and billing), Agent Alpha should handle the entire conversation. Which routing strategy is most accurate?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use a multi-label classifier (based on GPT-4o-mini) that assigns independent probability scores for each of the four domains (technical, billing, shipping, multi-domain) to the user's query. Route to the highest-probability single domain unless the multi-domain score exceeds a threshold of 0.3, in which case handle with Agent Alpha.", "correct": true, "explanation": "Multi-label classification with an explicit 'multi-domain' label is the most accurate way to detect cross-domain requests. Using a threshold (e.g., 0.3) for multi-domain detection ensures Agent Alpha handles ambiguous or multi-domain requests rather than forcing a single-domain classification."},
+        {"text": "Use a single-label classifier that picks exactly one domain for every query. If the top domain probability is below 0.7, fall back to Agent Alpha.", "correct": false, "explanation": "Single-label classification cannot detect multi-domain requests — it forces a choice even when a query spans two domains. A 0.7 threshold on single-label output is also arbitrary and less accurate than a dedicated multi-domain label."},
+        {"text": "Route all requests to Agent Alpha and let it use tool-calling to invoke the appropriate sub-agents as it detects domain shifts in the conversation.", "correct": false, "explanation": "Letting Agent Alpha invoke sub-agents is a valid agentic pattern but adds latency and cost — Agent Alpha performs unnecessary reasoning before routing. For a clear single-domain query, direct routing is faster and cheaper. The question asks for the most accurate routing strategy, implying the routing should happen correctly, not that all requests should go to Alpha."},
+        {"text": "Use keyword matching: if the query contains words like 'billing', 'invoice', 'payment' route to Gamma; if it contains 'broken', 'error', 'not working' route to Beta. Route to Alpha if both keyword sets match.", "correct": false, "explanation": "Keyword matching is brittle and error-prone for routing. Natural language queries about technical billing issues ('my subscription broke and I was charged twice') would match both keyword sets but a simple keyword OR logic would pick one arbitrarily."}
+      ],
+      "explanation": "Multi-label classification with an explicit multi-domain label and threshold is the most accurate routing strategy for multi-domain detection in intent classification systems.",
+      "tags": ["intent-classification", "multi-agent", "routing", "foundry"]
+    },
+    {
+      "id": "AI103-046",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are implementing a Foundry agent that processes user queries and returns responses from a RAG knowledge base. The agent is producing responses that include outdated policy information because users are seeing old document versions. The knowledge base uses Azure AI Search with a blob data source. How do you ensure users never see content from superseded document versions?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Enable 'soft delete' detection in the Azure AI Search indexer with a blob lease policy. When a document is superseded, delete it from Blob Storage (or rename with a [DELETED] prefix). The indexer detects the deletion and removes the document from the search index in the next index run.", "correct": true, "explanation": "Azure AI Search soft delete detection monitors the blob container for deletions and removes the corresponding index entries automatically. Combining this with a versioning convention (storing v1, v2 as separate blobs or using metadata versions) ensures that when a new version replaces an old one, the old version is removed from the index immediately."},
+        {"text": "Append a version number to each document's metadata in the blob and use Azure AI Search's 'force re-index' flag to trigger a full re-index every time any document is updated, ensuring the index always reflects the latest version.", "correct": false, "explanation": "A full re-index on every document update is operationally expensive and would cause unnecessary index rebuilds. An incremental indexer with soft delete detection is the correct, production-recommended approach for version management."},
+        {"text": "Configure the RAG agent to include a 'document version check' step that, before generating a response, queries a separate Azure Cosmos DB document that stores the current approved version of each document and discards any retrieved chunks from older versions.", "correct": false, "explanation": "Querying a separate Cosmos DB for version checking before every RAG retrieval adds latency and complexity. The version check should happen at ingestion time (indexer), not at retrieval time. This approach adds a database round-trip to every single query."},
+        {"text": "Use Azure AI Search's document versioning feature which automatically maintains version history and ensures only the latest version appears in search results.", "correct": false, "explanation": "Azure AI Search does not have a built-in document versioning feature that automatically manages version history and suppresses old versions in search results. Version management must be implemented via blob lifecycle policies and indexer soft delete detection."}
+      ],
+      "explanation": "Blob lifecycle + AI Search soft delete detection is the production-standard pattern for ensuring superseded documents are automatically removed from the RAG index at ingestion time.",
+      "tags": ["rag", "versioning", "azure-ai-search", "document-management"]
+    },
+    {
+      "id": "AI103-047",
+      "domain": "Plan and Manage Azure AI Solution",
+      "multiSelect": false,
+      "question": "You are setting up Azure AI Foundry for a team of 20 developers. You need to configure quotas so that no single developer can consume more than 10% of the subscription's total model deployment capacity, while allowing the team to share the remaining capacity dynamically. Which quota configuration should you implement?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Configure per-project Compute Quota in Azure AI Foundry: set the total subscription-level model deployment quota, then set a 10% limit per Foundry project. Enable 'Shared Quota' mode so unused project quota can be borrowed by other projects during peak usage.", "correct": true, "explanation": "Foundry per-project compute quotas with shared quota borrowing is the exact mechanism for controlling per-team resource consumption while allowing dynamic sharing. The 10% per-project cap prevents any single project from monopolizing capacity, and shared quota mode ensures idle capacity isn't wasted."},
+        {"text": "Create 20 separate Azure subscriptions, one per developer, each with its own Foundry project, so each developer has their own isolated quota.", "correct": false, "explanation": "Creating 20 separate subscriptions for 20 developers is operationally unsustainable — each subscription incurs management overhead, billing complexity, and separate RBAC management. Per-project quotas within a single subscription achieve the same isolation with a fraction of the operational burden."},
+        {"text": "Use Azure Policy to set a spending limit of $100 per developer per month on Azure AI Foundry resources, which indirectly limits their model deployment capacity usage.", "correct": false, "explanation": "Azure Policy spending limits apply to costs, not compute quotas. A developer could exhaust their $100 budget with a single large deployment and be blocked from further work, while another developer with cheaper workloads could have idle capacity. Spending limits do not control deployment capacity utilization."},
+        {"text": "Configure rate limiting on the Foundry API endpoints using Azure API Management to limit each developer principal to 10% of requests per minute, achieving the same effect as a compute quota.", "correct": false, "explanation": "Rate limiting restricts requests per minute but does not prevent a developer from submitting long-running inference requests that consume a disproportionate share of GPU compute. API Management rate limits are for request throughput, not compute capacity."}
+      ],
+      "explanation": "Per-project compute quotas with shared quota borrowing is Foundry's native quota governance mechanism, precisely addressing per-team capacity limits without subscription proliferation.",
+      "tags": ["quota", "foundry", "azure-policy", "capacity-management"]
+    },
+    {
+      "id": "AI103-048",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are implementing a real-time speech-enabled agent using Azure AI Foundry. The agent must process streaming audio from a mobile app, transcribe it, generate a response, and synthesize speech output — all with a total latency under 2 seconds. Which streaming architecture achieves this?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure AI Speech's real-time speech-to-text streaming via WebSocket, send interim transcription results to GPT-4o-mini for intent detection, and stream the response back using Azure AI Speech's Speech Synthesis API with 'short audio output' mode enabled for sub-second synthesis latency.", "correct": true, "explanation": "Azure AI Speech WebSocket streaming provides low-latency transcription. GPT-4o-mini is fast enough for intent detection on interim results. 'Short audio output' mode in Speech Synthesis is optimized for real-time conversational latency (<500ms synthesis time). Together these achieve <2s total round-trip latency."},
+        {"text": "Use Azure Communication Services (ACS) with its built-in real-time speech transcription and synthesis capabilities, integrated directly with Foundry via a webhook tool that streams audio responses back to the mobile app.", "correct": false, "explanation": "ACS real-time speech transcription introduces additional latency from the communication platform layer and does not natively integrate with Foundry's agent runtime for streaming text-to-speech responses. The latency would exceed 2 seconds."},
+        {"text": "Record audio on the mobile device, upload it to Blob Storage, use Azure AI Speech batch transcription, poll for results, generate a response with GPT-4o, and return an audio file URL to the mobile app.", "correct": false, "explanation": "Batch transcription and polling is fundamentally incompatible with real-time requirements — batch jobs take seconds to minutes to complete. This architecture has latency measured in minutes, not seconds."},
+        {"text": "Use Azure AI Foundry's native real-time audio streaming agent which handles speech-to-text, reasoning, and speech synthesis in a single managed pipeline without requiring separate service integration.", "correct": false, "explanation": "Azure AI Foundry does not have a native real-time audio streaming agent that handles all three steps (STT, reasoning, TTS) in a single managed pipeline. Speech processing in Foundry requires integration with Azure AI Speech."}
+      ],
+      "explanation": "Azure AI Speech WebSocket streaming + GPT-4o-mini + short-audio-output TTS is the only architecture that reliably achieves sub-2s end-to-end latency for real-time speech-to-speech conversation.",
+      "tags": ["real-time", "speech", "streaming", "azure-ai-speech"]
+    },
+    {
+      "id": "AI103-049",
+      "domain": "Implement Generative AI & Agentic Solutions",
+      "multiSelect": false,
+      "question": "You are building a Foundry agent that must maintain conversation context across multiple sessions for the same user (e.g., a customer returning the next day). The agent uses an in-memory session store today but this is lost when the app restarts. You need persistent cross-session memory. Which storage solution provides the best durability and fastest read latency for this use case?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Store conversation summaries in Azure Cosmos DB with the user ID as the partition key. On each new session, load the last 5 conversation summaries to reconstruct context. Use Cosmos DB's point-read for sub-10ms latency on the most recent summary.", "correct": true, "explanation": "Azure Cosmos DB with user ID as partition key provides scalable, low-latency (sub-10ms point-read) access to conversation history across sessions. Storing summaries (not raw turns) keeps storage efficient. Cosmos DB's global distribution also ensures durability and high availability."},
+        {"text": "Store conversation history in Azure Blob Storage as JSON files, one per user per day, and load the relevant files when a user starts a new session.", "correct": false, "explanation": "Blob Storage is designed for bulk storage, not low-latency random access. Loading conversation files for each session would require listing blobs, fetching the file, and parsing JSON — significantly slower than Cosmos DB point-reads."},
+        {"text": "Store conversation history in Azure Table Storage using the user ID as the RowKey, enabling fast single-partition reads of the user's conversation history.", "correct": false, "explanation": "Azure Table Storage provides single-partition fast reads but has no built-in summarization capability. Each conversation turn would be stored as a separate row, requiring multiple reads to reconstruct context. Cosmos DB is equally fast for point reads but offers better query flexibility."},
+        {"text": "Store the full conversation history in Azure SQL Database with a clustered index on (user_id, timestamp), enabling efficient range queries to retrieve a user's full conversation history across sessions.", "correct": false, "explanation": "Azure SQL Database is over-provisioned for this use case — it's a relational database with higher latency and cost than Cosmos DB for simple key-value read patterns. For conversation history retrieval, Cosmos DB or Table Storage provide equivalent speed at lower cost."}
+      ],
+      "explanation": "Cosmos DB with user ID partition key + summary storage provides the optimal balance of sub-10ms read latency, cross-session durability, and cost efficiency for persistent agent memory.",
+      "tags": ["memory", "cosmos-db", "cross-session", "foundry"]
+    },
+    {
+      "id": "AI103-050",
+      "domain": "Plan and Manage Azure AI Solution",
+      "multiSelect": false,
+      "question": "You are implementing Azure AI Foundry's evaluation pipeline for a new agent version before promoting it to production. The evaluation must pass three criteria: (1) groundedness score >= 0.85, (2) answer relevance >= 0.80, and (3) no safety events. The evaluation dataset contains 500 test cases. Which evaluation configuration provides the most reliable assessment of these three criteria?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure AI Foundry's built-in evaluation suite with 'groundedness', 'answer relevance', and 'safety' evaluators on all 500 test cases. Run the evaluation as a batch job against the new agent version's endpoint, and configure the evaluation to use GPT-4o as the evaluator model (rather than a smaller model) for maximum evaluation reliability.", "correct": true, "explanation": "Foundry's built-in evaluators are pre-configured for these exact metrics. Using GPT-4o as the evaluator model (rather than a smaller, cheaper model) provides the most reliable assessment because evaluation quality is only as good as the evaluator model — smaller models produce noisy evaluation scores that can incorrectly pass or fail agent versions."},
+        {"text": "Run the 500 test cases manually by having human evaluators score each response for groundedness, relevance, and safety, and promote the agent only if human scores meet the thresholds.", "correct": false, "explanation": "Manual human evaluation of 500 test cases is prohibitively expensive and time-consuming. Automated evaluation with GPT-4o-based evaluators provides sufficient accuracy for production gate decisions at a fraction of the human cost."},
+        {"text": "Use a random sampling approach: randomly select 50 of the 500 test cases and run evaluation only on those 50. If they pass, promote the agent. This reduces evaluation cost and time while maintaining statistical validity.", "correct": false, "explanation": "A sample of 50 from 500 provides insufficient statistical power to detect regressions — a 5% regression affecting 25 test cases might appear in only 2-3 of the 50 sampled cases, risking a false pass. The full 500-test-case evaluation is necessary for reliable production gate decisions."},
+        {"text": "Use Azure AI Foundry's evaluation with the built-in evaluators but on a 10% stratified sample of 50 test cases, stratified to include equal representation from each agent domain (billing, technical, shipping, etc.).", "correct": false, "explanation": "Stratified sampling helps coverage but 50 total cases is still too small for reliable scoring, especially for the safety evaluator where rare but critical safety events might not appear in a 50-case sample. Full dataset evaluation is required for safety-critical criteria."}
+      ],
+      "explanation": "Full 500-case automated evaluation with GPT-4o-based evaluators is the only approach that provides statistically reliable groundedness, relevance, and safety assessments for a production agent gate decision.",
+      "tags": ["evaluation", "groundedness", "safety", "foundry"]
+    }
+  ]
+}
