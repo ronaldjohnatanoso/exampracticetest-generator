@@ -21,8 +21,8 @@ exam-practice-test/
 ## Adding a New Question Bank
 
 1. Create `data/questions-{yourslug}.json` following the schema below
-2. Add an entry to `data/manifest.json` following the same pattern as existing banks
-3. That's it — the app reads `data/manifest.json` to populate the dropdown
+2. Push to GitHub
+3. That's it — the app uses the GitHub Contents API to auto-discover all `questions-*.json` files in `data/`
 
 ### Minimal JSON Schema
 

@@ -42,26 +42,46 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ── Manifest / Dropdown ─────────────────────────
-// Dynamically loaded from data/manifest.json — no hardcoded bank list.
-// To add a new bank: drop a JSON file in data/ and add an entry to data/manifest.json
+// Auto-discovers all data/questions-*.json files via GitHub Contents API.
+// New bank = drop file in data/ → appears automatically, no code changes.
+
+const REPO = 'ronaldjohnatanoso/exampracticetest-generator';
 
 async function loadManifest() {
   const select = $('qb-select');
   select.innerHTML = '';
 
-  let manifest;
+  let files = [];
   try {
-    const resp = await fetch('data/manifest.json');
-    manifest = await resp.json();
-  } catch {
-    // Fallback: nothing in dropdown
-    return;
-  }
+    const resp = await fetch(`https://api.github.com/repos/${REPO}/contents/data?ref=main`);
+    if (resp.ok) {
+      const entries = await resp.json();
+      files = (entries || [])
+        .filter(e => e.type === 'file' && /^questions-.+\.json$/.test(e.name) && e.name !== 'questions-schema.json')
+        .map(e => `data/${e.name}`);
+    }
+  } catch { /* GitHub API unavailable — dropdown stays empty */ }
 
-  const banks = manifest.banks || [];
-  banks.sort((a, b) => (a.order || 0) - (b.order || 0));
+  if (files.length === 0) return;
 
-  banks.forEach(bank => {
+  const results = [];
+  await Promise.allSettled(
+    files.map(async (file) => {
+      try {
+        const resp = await fetch(file);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        results.push({
+          file,
+          name:        data.title       || file,
+          version:     data.version     || '',
+          description: data.description || `${data.questions?.length || 0} questions`,
+        });
+      } catch { /* skip */ }
+    })
+  );
+
+  results.forEach(bank => {
     const opt = document.createElement('option');
     opt.value = bank.file;
     const versionTag = bank.version ? ` — v${bank.version}` : '';
@@ -83,9 +103,9 @@ async function loadManifest() {
   select.appendChild(genOpt);
 
   // Auto-select first available bank
-  if (banks.length > 0) {
+  if (results.length > 0) {
     select.selectedIndex = 0;
-    $('qb-desc').textContent = banks[0].description || '';
+    $('qb-desc').textContent = results[0].description || '';
   }
 }
 
