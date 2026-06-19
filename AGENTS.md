@@ -21,7 +21,8 @@ exam-practice-test/
 ## Adding a New Question Bank
 
 1. Create `data/questions-{yourslug}.json` following the schema below
-2. That's it — the app auto-loads all `.json` files in `data/`
+2. Add an entry to `data/manifest.json` following the same pattern as existing banks
+3. That's it — the app reads `data/manifest.json` to populate the dropdown
 
 ### Minimal JSON Schema
 
@@ -96,4 +97,5 @@ exam-practice-test/
 |---|---|---|
 | AI-103 — Azure AI Engineer | 50 hard | ✅ Live |
 | AZ-104 — Azure Administrator | 50 hard | ✅ Live |
-| AZ-305 — Design Azure Infra | Sample | ❌ Not deployed |
+| AZ-305 — Design Azure Infra | 40 sample | ✅ Live |
+| AZ-305 v2 — Azure Migration Master | 50 hard | ✅ Live |
