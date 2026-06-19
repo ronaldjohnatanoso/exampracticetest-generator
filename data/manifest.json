@@ -1,0 +1,32 @@
+{
+  "banks": [
+    {
+      "id": "ai103",
+      "file": "data/questions-ai103.json",
+      "name": "AI-103 — Developing AI Apps and Agents on Azure (Azure AI Engineer Associate)",
+      "version": "1.0",
+      "description": "50 hard questions covering Azure AI Foundry, agents, RAG, Azure OpenAI, responsible AI, and more. Updated April 2026."
+    },
+    {
+      "id": "az104",
+      "file": "data/questions-az104.json",
+      "name": "AZ-104 — Microsoft Azure Administrator Associate",
+      "version": "1.0",
+      "description": "50 hard questions covering Azure identities, storage, compute, networking, and monitoring. Updated 2026."
+    },
+    {
+      "id": "az305-v2",
+      "file": "data/questions-az305-v2.json",
+      "name": "AZ-305 v2: Azure Infrastructure Migration Master",
+      "version": "2.0",
+      "description": "50 hard questions focused on Azure migration strategies, tools, and scenarios — covering identity, data, infrastructure, app migration, cross-cloud, and post-migration governance. Updated 2026."
+    },
+    {
+      "id": "az305",
+      "file": "data/questions-az305.json",
+      "name": "AZ-305: Designing Microsoft Azure Infrastructure Solutions",
+      "version": "1.0",
+      "description": "Practice exam covering identity, governance, data storage, business continuity, and infrastructure design."
+    }
+  ]
+}

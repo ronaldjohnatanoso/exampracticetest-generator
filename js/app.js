@@ -42,41 +42,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ── Manifest / Dropdown ─────────────────────────
-// Known question bank files — add new banks here
-const KNOWN_BANKS = [
-  { id: 'az305',  file: 'data/questions-az305.json' },
-  { id: 'az305v2', file: 'data/questions-az305-v2.json' },
-  { id: 'az104',  file: 'data/questions-az104.json' },
-  { id: 'ai103',  file: 'data/questions-ai103.json' },
-];
+// Dynamically loaded from data/manifest.json — no hardcoded bank list.
+// To add a new bank: drop a JSON file in data/ and add an entry to data/manifest.json
 
 async function loadManifest() {
   const select = $('qb-select');
   select.innerHTML = '';
 
-  const results = [];
-  // Fetch all known banks in parallel, keep only those that load successfully
-  await Promise.allSettled(
-    KNOWN_BANKS.map(async (bank) => {
-      try {
-        const resp = await fetch(bank.file);
-        if (!resp.ok) return;
-        const data = await resp.json();
-        results.push({
-          id:          bank.id,
-          file:        bank.file,
-          name:        data.title      || bank.id,
-          version:     data.version    || '',
-          description: data.description || `${data.questions?.length || 0} questions`,
-        });
-      } catch { /* skip unavailable banks */ }
-    })
-  );
+  let manifest;
+  try {
+    const resp = await fetch('data/manifest.json');
+    manifest = await resp.json();
+  } catch {
+    // Fallback: nothing in dropdown
+    return;
+  }
 
-  // Sort: known banks first, then custom uploads
-  results.sort((a, b) => a.id.localeCompare(b.id));
+  const banks = manifest.banks || [];
+  banks.sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  results.forEach(bank => {
+  banks.forEach(bank => {
     const opt = document.createElement('option');
     opt.value = bank.file;
     const versionTag = bank.version ? ` — v${bank.version}` : '';
@@ -98,9 +83,9 @@ async function loadManifest() {
   select.appendChild(genOpt);
 
   // Auto-select first available bank
-  if (results.length > 0) {
+  if (banks.length > 0) {
     select.selectedIndex = 0;
-    $('qb-desc').textContent = results[0].description || '';
+    $('qb-desc').textContent = banks[0].description || '';
   }
 }
 
