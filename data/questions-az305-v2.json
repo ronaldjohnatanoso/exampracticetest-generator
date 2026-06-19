@@ -1,0 +1,681 @@
+{
+  "title": "AZ-305 v2: Azure Infrastructure Migration Master",
+  "version": "2.0",
+  "description": "50 hard questions focused on Azure migration strategies, tools, and scenarios — covering identity, data, infrastructure, app migration, cross-cloud, and post-migration governance. Updated 2026.",
+  "timeLimit": 110,
+  "count": 50,
+  "shuffle": true,
+  "passingScore": 70,
+  "domains": [
+    {"name": "Migration Strategy & Planning", "weight": 12},
+    {"name": "Identity & Access Migration", "weight": 10},
+    {"name": "Data Migration", "weight": 12},
+    {"name": "Infrastructure & Compute Migration", "weight": 12},
+    {"name": "Application Migration", "weight": 10},
+    {"name": "Governance & Compliance", "weight": 8},
+    {"name": "Advanced Migration Scenarios", "weight": 12},
+    {"name": "Network Migration & Hybrid Connectivity", "weight": 8},
+    {"name": "Cost & Operations", "weight": 6},
+    {"name": "Cross-Platform & Mixed Workload", "weight": 8},
+    {"name": "Cutover & Post-Migration Validation", "weight": 8}
+  ],
+  "questions": [
+    {
+      "id": "AZ305-MIG-001",
+      "domain": "Migration Strategy & Planning",
+      "question": "A retail company with 2,000 on-premises VMs running a mix of Windows Server 2008 R2, 2012 R2, and Linux (Ubuntu 18.04) is planning a large-scale migration to Azure. They have a 12-month timeline and must maintain 99.9% uptime during the migration. Their ERP system runs on a 3-tier on-premises app that cannot be refactored. The database is SQL Server 2008 R2 with 8TB of data.\n\nWhich migration approach minimizes risk while meeting the timeline?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Migrate VMs using Azure Migrate in waves, starting with non-critical workloads, using Azure Site Recovery for the ERP system with a pilot light DR strategy", "correct": true, "explanation": "Azure Site Recovery supports lift-and-shift for the ERP system with minimal downtime. Wave-based migration reduces risk. Pilot light DR keeps a minimal replica running in Azure while maintaining on-prem as primary."},
+        {"text": "Re-architect the ERP system to containers before migration to reduce VM count and simplify operations", "correct": false, "explanation": "Re-architecting a 3-tier ERP system within 12 months while maintaining uptime is extremely high-risk. The question explicitly states the app cannot be refactored."},
+        {"text": "Use Azure Migrate Discovery to assess all VMs simultaneously and migrate everything at once during a maintenance window", "correct": false, "explanation": "Simultaneous migration of 2,000 VMs with 99.9% uptime requirement is not feasible. Azure Migrate Discovery is an assessment tool, not a migration mechanism."},
+        {"text": "Migrate all VMs to Azure Virtual Desktop to consolidate infrastructure and simplify management", "correct": false, "explanation": "AVD is a desktop virtualization platform, not a general VM migration strategy. It does not suit a 3-tier ERP application."}
+      ],
+      "explanation": "Azure Site Recovery with wave-based migration and pilot light DR is the recommended approach for large-scale migrations with uptime requirements and non-refactorable applications."
+    },
+    {
+      "id": "AZ305-MIG-002",
+      "domain": "Migration Strategy & Planning",
+      "question": "A manufacturing company is assessing their application portfolio for cloud migration. They have 47 applications with varying complexity: 12 are COTS (commercial off-the-shelf) SaaS-ready apps, 18 are custom LOB apps with SQL Server backends, 10 are legacy ASP.NET apps running on Windows Server 2008, and 7 are already containerized using Docker.\n\nWhich application grouping strategy optimizes cloud adoption effort and minimizes total cost of ownership?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Group all legacy ASP.NET apps together and migrate them first using IaaS lift-and-shift, then address the custom LOB apps", "correct": false, "explanation": "Legacy ASP.NET apps on Server 2008 have end-of-support issues and should be prioritized for remediation or migration, not deferred."},
+        {"text": "Repurchase SaaS-ready apps to SaaS alternatives, rehost Docker containers to Azure Container Instances, replatform custom LOB apps with Azure SQL Managed Instance, and refactor legacy ASP.NET apps to Azure App Service", "correct": true, "explanation": "Each workload category benefits from the appropriate migration strategy using the 4-R framework (Rehost, Refactor, Replatform, Repurchase). SaaS-ready apps eliminate on-prem license costs, containers rehost without changes, LOB apps replatform with managed SQL, and legacy apps refactor to PaaS."},
+        {"text": "Migrate all on-premises SQL Server databases to Azure SQL Database using the Data Migration Assistant, then migrate all apps to Azure App Service", "correct": false, "explanation": "Azure SQL Database has compatibility limitations with SQL Server 2008 R2 features. Not all apps are suitable for App Service due to ISV dependencies."},
+        {"text": "Prioritize the 7 Docker apps first because they are already containerized and can be quickly moved to AKS", "correct": false, "explanation": "While containerized apps are easier to migrate, SaaS-ready COTS apps represent greater business value improvement (eliminating on-prem license costs) and should be evaluated in parallel."}
+      ],
+      "explanation": "The 4-R framework applied per workload category optimizes effort and ROI. Each application should be evaluated individually against the 4-R options to determine the best migration path."
+    },
+    {
+      "id": "AZ305-MIG-003",
+      "domain": "Migration Strategy & Planning",
+      "question": "An e-commerce company uses an in-house developed order processing system that runs on a single large SQL Server instance (4TB, 800 databases, 3000 login accounts). The system cannot be modified for 6 months due to a critical audit. The business requires zero data loss migration and minimal downtime (<4 hours).\n\nWhich migration path and tooling combination should you recommend? (Choose two.)",
+      "shuffleChoices": true,
+      "multiSelect": true,
+      "selectCount": 2,
+      "choices": [
+        {"text": "Azure SQL Database with elastic pools to consolidate the 800 databases", "correct": false, "explanation": "Azure SQL Database does not support 800 databases per instance. The maximum is 100 databases per elastic pool."},
+        {"text": "SQL Server on Azure Virtual Machines with Storage Spaces Direct for the 4TB database", "correct": true, "explanation": "SQL Server on Azure VMs with S2D provides lift-and-shift compatibility with all SQL Server features including 800 databases. This maintains full compatibility without code changes during the audit freeze."},
+        {"text": "Azure Database Migration Service with offline mode for the cutover window", "correct": true, "explanation": "DMS offline mode supports large-scale SQL Server migrations with transaction consistency. It can complete the migration within the 4-hour downtime window when properly sized with Azure ExpressRoute."},
+        {"text": "Azure Arc-enabled SQL Server to manage on-premises SQL Server from Azure", "correct": false, "explanation": "Azure Arc extends Azure management plane to on-premises resources but does not move data to Azure."},
+        {"text": "Log shipping to an Azure SQL Managed Instance standby for near-zero RPO", "correct": false, "explanation": "Log shipping to Azure SQL Managed Instance is not a supported migration path. Managed Instance does not support log shipping from standalone SQL Server instances."}
+      ],
+      "explanation": "SQL Server on Azure VMs provides 100% compatibility for the 800-database scenario, and DMS offline mode can complete the cutover within 4 hours. This combination preserves audit compliance while achieving the migration objective."
+    },
+    {
+      "id": "AZ305-MIG-004",
+      "domain": "Migration Strategy & Planning",
+      "question": "A healthcare organization subject to HIPAA compliance must migrate from on-premises data centers to Azure. They have 15 PB of medical imaging data (DICOM files) that is rarely accessed after 90 days but must be retained for 7 years. They currently use a tape backup system for archival.\n\nWhich storage tiering and data migration strategy meets compliance requirements at the lowest cost?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Data Factory with a copy activity to migrate all 15 PB to Azure Blob Storage with Cool tier, then implement Azure File Sync for ongoing access", "correct": false, "explanation": "Azure File Sync is for Azure Files, not Blob Storage. Cool tier at 15 PB would be expensive compared to Archive tier."},
+        {"text": "Migrate to Azure Blob Storage with Cool tier for 0-90 days, then transition to Archive tier for long-term retention. Use Azure Data Box for initial bulk migration and Data Factory for incremental sync", "correct": true, "explanation": "Blob Storage Cool tier ($10/TB/month) + Archive tier ($0.99/TB/month) provides 99%+ cost reduction vs. hot storage. Azure Data Box (500 TB per device) handles the 15 PB bulk transfer efficiently. Data Factory handles incremental sync. Archive tier meets 7-year HIPAA retention requirements."},
+        {"text": "Deploy Azure HPC Cache in front of Blob Storage to accelerate DICOM file access during the migration", "correct": false, "explanation": "HPC Cache is designed for high-performance computing workloads with frequent access patterns, not for rarely-accessed archival data."},
+        {"text": "Use Azure Stack HCI to maintain a hybrid cloud architecture with on-premises archival storage", "correct": false, "explanation": "Azure Stack HCI is a hyperconverged infrastructure solution, not a storage archival tier. Maintaining on-premises storage for archival defeats the purpose of cloud migration."}
+      ],
+      "explanation": "Blob Storage with tiered access (Cool then Archive) combined with Azure Data Box for bulk initial transfer and Data Factory for ongoing sync provides HIPAA-compliant archival at the lowest cost."
+    },
+    {
+      "id": "AZ305-MIG-005",
+      "domain": "Migration Strategy & Planning",
+      "question": "A financial services firm is migrating from on-premises VMware to Azure. They have 300 VMs with complex networking: multiple VLANs, VRRP for load balancing, and a custom IPAM system. The migration must complete in 8 weeks. The team has Azure experience but limited Azure networking knowledge.\n\nWhich migration and networking strategy should you recommend?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Migrate with agentless dependency analysis, deploy Azure Virtual WAN to replace the on-premises IPAM, and use Azure Route Server for BGP peering with the VRRP load balancers", "correct": false, "explanation": "Azure Route Server is for SD-WAN and NVA scenarios, not for replacing VRRP. Virtual WAN is for branch connectivity, not enterprise datacenter migration."},
+        {"text": "Use Azure Migrate with agentless dependency analysis, map each VLAN to an Azure VNet subnet, replace VRRP with Azure Load Balancer, and implement Azure Private DNS for name resolution", "correct": true, "explanation": "VNet subnets replace VLANs 1:1. Azure Load Balancer (Standard/HA ports) replaces VRRP for high availability. Azure Private DNS replaces the on-premises IPAM DNS function. This is the standard enterprise-scale migration pattern."},
+        {"text": "Deploy Azure Arc and Azure Stack to create a hybrid environment that preserves existing networking without changes", "correct": false, "explanation": "Azure Arc and Azure Stack extend Azure management to on-premises but do not provide a migration path."},
+        {"text": "Use Azure ExpressRoute with private peering to connect the on-premises network to Azure, migrating VMs one at a time while maintaining the existing IP scheme", "correct": false, "explanation": "ExpressRoute private peering allows migration with preserved IP addresses, but migrating VMs one-at-a-time individually does not leverage Azure Migrate's wave-based migration capabilities for efficiency."}
+      ],
+      "explanation": "Azure Migrate + VNet/subnet mapping + Azure Load Balancer + Private DNS is the standard Azure networking migration pattern that minimizes network reconfiguration."
+    },
+    {
+      "id": "AZ305-MIG-006",
+      "domain": "Identity & Access Migration",
+      "question": "A multinational company has a primary Active Directory forest (contoso.com) with 5 child domains representing different regional offices. They use Microsoft Entra ID for Microsoft 365. During the Entra ID implementation, they accidentally deleted the UPN suffix for contoso.com and now have 12,000 users with broken authentication.\n\nWhich recovery sequence restores authentication with the LEAST disruption?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Recreate the contoso.com UPN suffix in Entra ID, then force Entra Connect delta sync to restore user principal names", "correct": false, "explanation": "Entra ID does not have a UPN suffix concept. The issue is with custom domain verification in Entra ID, not a UPN suffix. Recreating the domain requires re-verification."},
+        {"text": "Add a new verified custom domain (contoso.com) in Entra ID, update all user UPNs to use the new domain via PowerShell bulk update, then run Entra Connect delta sync", "correct": true, "explanation": "The correct fix: (1) Add and verify contoso.com as a custom domain in Entra ID, (2) Bulk update UPNs using MSOnline/PowerShell, (3) Run delta sync to propagate changes. This sequence minimizes auth disruption while maintaining directory consistency."},
+        {"text": "Change the ImmutableID for all affected users in Entra ID and re-sync from on-premises AD", "correct": false, "explanation": "Changing ImmutableID severs the user-to-cloud identity link and requires a full re-sync. This is a destructive operation that causes MORE disruption."},
+        {"text": "Enable the 'Alternate Login ID' feature in Entra ID to allow users to authenticate with their email address instead of UPN", "correct": false, "explanation": "Alternate Login ID is for scenarios where users cannot use UPN at all. It does not fix a deleted/broken UPN suffix issue."}
+      ],
+      "explanation": "Custom domain verification in Entra ID is separate from UPN suffixes in AD. The correct approach is to verify the domain and bulk-update UPNs without destructive ImmutableID changes."
+    },
+    {
+      "id": "AZ305-MIG-007",
+      "domain": "Identity & Access Migration",
+      "question": "A company is migrating from on-premises AD to Microsoft Entra ID. They have 5,000 users, 300 groups, and complex nested group memberships used for resource authorization. They use 3rd-party SaaS applications configured with SAML 2.0 SSO to on-premises AD via ADFS.\n\nWhich identity architecture maintains current authorization patterns during and after migration?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Entra Connect Cloud Sync with group writeback enabled so that nested group memberships are preserved in on-premises AD and synced to Entra ID", "correct": false, "explanation": "Entra Connect Cloud Sync does not support group writeback. Group writeback is only available in Entra Connect (full sync). Nested group expansion for SAML requires configuration beyond just sync."},
+        {"text": "Use Entra Connect (full) with custom sync rules to expand nested groups into flat security groups, and configure SAML applications to use Entra ID as the identity provider with group claim mapping", "correct": true, "explanation": "Entra Connect custom sync rules can flatten nested group structures into flat security groups that Entra ID can tokenize as claims. The 3rd-party SaaS apps reconfigure from ADFS SAML to Entra ID SAML SSO."},
+        {"text": "Deploy Entra Connect with group filtering configured for security groups only, and implement Entra ID External Identities for SaaS application SSO", "correct": false, "explanation": "Entra ID External Identities (B2B) is for guest users from external organizations, not for internal users. This is the wrong product for internal AD-to-Entra migration SSO."},
+        {"text": "Implement Azure AD B2C to replace ADFS for all SAML 2.0 SaaS applications during migration", "correct": false, "explanation": "Azure AD B2C does not support SAML 2.0 protocol for SaaS applications."}
+      ],
+      "explanation": "Entra Connect with custom sync rules to flatten nested groups, combined with Entra ID as the SAML IdP, preserves the existing authorization model while migrating SaaS SSO from ADFS to cloud-native Entra ID."
+    },
+    {
+      "id": "AZ305-MIG-008",
+      "domain": "Identity & Access Migration",
+      "question": "A manufacturing company is consolidating 3 acquired companies, each with its own Active Directory forest (Forest A, B, C), into a single Entra ID tenant. All three forests have the same UPN suffix (company.com) that is already verified in Entra ID. After initial Entra Connect setup, users from Forest B report they cannot authenticate.\n\nInvestigation shows: Forest B uses AD LDS (ADAM) partitions that are not being synced.\n\nWhich fix resolves the Forest B authentication issue?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Enable the 'Same user support' feature in Entra ID to allow duplicate users across forests", "correct": false, "explanation": "'Same user support' is a soft-match feature for users who exist in both AD and Entra ID. It does not resolve sync failures caused by connector space issues or AD LDS partition problems."},
+        {"text": "Configure the AD LDS connector space in Entra Connect to sync the userPrincipalName and objectGUID attributes correctly, and run a full sync cycle", "correct": true, "explanation": "AD LDS partitions store user and group objects used in forest B's application authentication. If the connector space is not configured to include these partitions, those objects are not synced to Metaverse and cannot reach Entra ID. Correct connector space configuration + full sync resolves this."},
+        {"text": "Add Forest B's SID history to the trusted forest list in Entra Connect and run a delta sync", "correct": false, "explanation": "Entra Connect does not have a 'trusted forest' configuration. SID history is an AD migration concept for same-forest migrations, not between separate Entra Connect installations."},
+        {"text": "Delete the Entra Connect server and reinstall with a multi-forest topology that includes Forest B's AD LDS partitions", "correct": false, "explanation": "AD LDS (ADAM) is not part of the standard Entra Connect multi-forest topology. AD LDS requires custom LDAP connector configuration."}
+      ],
+      "explanation": "AD LDS partitions require explicit configuration in the Entra Connect connector space. The fix is to configure the LDAP connector for AD LDS, map the correct attributes (UPN and objectGUID), and run a full sync."
+    },
+    {
+      "id": "AZ305-MIG-009",
+      "domain": "Identity & Access Migration",
+      "question": "An organization is migrating from ADFS to Microsoft Entra ID as the SAML/OAuth2 identity provider for 45 SaaS applications. The applications use SAML 2.0 with custom claim mappings including a role claim from an AD group that is 15 levels nested.\n\nWhich combination of Entra ID features ensures the role claim resolves correctly after migration? (Choose three.)",
+      "shuffleChoices": true,
+      "multiSelect": true,
+      "selectCount": 3,
+      "choices": [
+        {"text": "Entra Connect with custom sync rule to expand the 15-level nested group into a flat security group synced to Entra ID", "correct": true, "explanation": "Custom sync rules can use the 'member[edge]group' expression to recursively expand nested group membership into flat groups that Entra ID can issue as token claims."},
+        {"text": "Azure AD Application Proxy to front the on-premises ADFS server for SAML passthrough during migration", "correct": false, "explanation": "Application Proxy is for web applications accessed via a URL, not for SAML assertion passthrough."},
+        {"text": "Entra ID group claim with 'Groups from directory' selected and 'Emit groups as role claims' enabled in the enterprise application SAML configuration", "correct": true, "explanation": "Entra ID's native group claim configuration in enterprise applications can emit group membership as role claims. Combined with expanded flat groups from custom sync rules, the nested group hierarchy is resolved before token issuance."},
+        {"text": "Use Security Assertion Markup Language (SAML) token encryption to preserve the original role claim format from ADFS", "correct": false, "explanation": "SAML token encryption secures assertions in transit, not for transforming claim content or resolving nested group expansion."},
+        {"text": "Entra ID Privileged Identity Management with group-based activation to control role assignment before SaaS access", "correct": false, "explanation": "PIM controls privileged role assignments (like Global Admin), not application role claims from nested AD groups."},
+        {"text": "Configure the SAML signing certificate to use SHA-256 to ensure the role claim is included in the signed portion of the SAML assertion", "correct": true, "explanation": "SAML assertions with SHA-256 signing include all standard claims in the signed portion of the token. The role claim must be included in the assertion to reach the SaaS application."}
+      ],
+      "explanation": "Resolving a 15-level nested group for SAML role claims requires: (1) custom sync rule to expand nesting, (2) Entra ID group claim configuration to emit as role, and (3) ensuring the claim is in the signed assertion."
+    },
+    {
+      "id": "AZ305-MIG-010",
+      "domain": "Identity & Access Migration",
+      "question": "A company running Windows Server 2012 R2 ADFS with 50,000 users is migrating to Microsoft Entra ID. They have a custom MFA provider integrated via ADFS adapter. During the Entra ID migration, the CISO requires that the same custom MFA provider continue to work.\n\nWhich statement about custom MFA provider integration is correct?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Microsoft Entra ID supports custom MFA adapters that can integrate with any RADIUS-compliant MFA provider through the MFA Server gateway", "correct": false, "explanation": "Entra ID does not support MFA adapters that integrate with third-party RADIUS providers. There is no 'MFA Server gateway' in Entra ID."},
+        {"text": "Entra ID does not support custom MFA adapters directly; the company must migrate to a supported MFA method (Microsoft Authenticator, Windows Hello, or OATH hardware tokens) or maintain ADFS for MFA only", "correct": true, "explanation": "Entra ID supports: (1) Microsoft Entra ID MFA (cloud-native), (2) Windows Hello for Business, or (3) OATH hardware tokens. Custom/third-party MFA providers that integrate via ADFS adapter cannot be directly integrated with Entra ID. The only options are: migrate to a supported MFA method, or keep ADFS running solely for MFA (hybrid approach with Entra ID for SSO)."},
+        {"text": "Azure AD B2C with custom policies supports any third-party MFA provider through the Identity Experience Framework", "correct": false, "explanation": "Azure AD B2C custom policies support some third-party MFA providers via external REST APIs or OIDC/OAUTH2 protocols, but not the specific ADFS MFA adapter model. B2C is designed for consumer/external identity scenarios, not enterprise internal user MFA."},
+        {"text": "Network adapter teaming between the custom MFA provider and Entra ID using SAML 2.0 passthrough authentication provides a supported integration path", "correct": false, "explanation": "There is no 'network adapter teaming' concept for identity providers in Entra ID. This option describes non-existent functionality."}
+      ],
+      "explanation": "Entra ID does not support custom MFA adapters. The supported paths are Microsoft Authenticator, Windows Hello, OATH tokens, or maintaining ADFS solely for MFA in a hybrid configuration."
+    },
+    {
+      "id": "AZ305-MIG-011",
+      "domain": "Data Migration",
+      "question": "A logistics company is migrating a 50 TB SQL Server data warehouse (2016 Enterprise Edition) to Azure. The data warehouse uses table partitioning, filtered indexes, and stretch databases to on-premises SQL Server. The migration must complete with <4 hour downtime. They have ExpressRoute with 1 Gbps dedicated connection.\n\nWhich Azure data migration strategy achieves the lowest RTO?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure SQL Managed Instance with Azure Database Migration Service in online mode, migrating data in batches by partition", "correct": true, "explanation": "DMS online mode with partition-level migration enables continuous data sync during migration. Azure SQL Managed Instance supports table partitioning, filtered indexes, and stretch databases natively. The final cutover is a metadata-only switchover, achieving RTO close to zero."},
+        {"text": "Use Azure Data Factory with a copy activity to migrate all 50 TB, then apply incremental loads via Change Data Capture from the on-premises database", "correct": false, "explanation": "Copy Activity in Data Factory cannot use CDC as a source. Data Factory is not designed for transactional database migration with low RTO."},
+        {"text": "Restore a full backup to Azure SQL Managed Instance, then use transactional replication to sync incremental changes", "correct": false, "explanation": "Azure SQL Managed Instance does not support transactional replication as a subscriber from an on-premises publisher."},
+        {"text": "Use Azure Data Box to transfer a full backup file, then restore to SQL Server on Azure VMs with Log Shipping for cutover", "correct": false, "explanation": "Azure Data Box adds 1-2 weeks of shipping time, making it unsuitable for a 4-hour RTO requirement."}
+      ],
+      "explanation": "DMS online mode with partition-aware migration leverages ExpressRoute bandwidth efficiently while maintaining transactional consistency."
+    },
+    {
+      "id": "AZ305-MIG-012",
+      "domain": "Data Migration",
+      "question": "A retail company is migrating from Oracle on-premises to Azure. They have 200 TB of data across 800 tables, including 50 tables with BFILE and CLOB data types, and 12 stored procedures that use Oracle-specific features (DBMS_SCHEDULER, DBMS_RLS). They need to migrate with a maximum 8-hour downtime window.\n\nWhich migration approach handles the Oracle-specific components correctly?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Data Factory with Oracle CDC connector to migrate data, then convert stored procedures to Azure SQL Managed Instance T-SQL using the SQL Migration Assistant", "correct": false, "explanation": "ADF Oracle CDC connector does not support BFILE/CLOB data types directly. SSMA converts PL/SQL to T-SQL but DBMS_SCHEDULER and RLS have no direct equivalent in Azure SQL."},
+        {"text": "Use Oracle GoldenGate to replicate to an Oracle database on Azure VMs, then refactor the 12 stored procedures using Azure SQL compatibility features (SQL Agent jobs, row-level security)", "correct": true, "explanation": "Oracle GoldenGate provides continuous replication with low downtime. DBMS_SCHEDULER maps to SQL Agent jobs, and DBMS_RLS maps to Azure SQL's native RLS feature. BFILE/CLOB types migrate as VARBINARY(MAX) and NVARCHAR(MAX)."},
+        {"text": "Use Oracle Data Guard to create a physical standby on Oracle Cloud Infrastructure, then use Azure Data Factory to cross-cloud migrate to Azure SQL Managed Instance", "correct": false, "explanation": "This approach adds unnecessary complexity with OCI as an intermediate step. Data Guard standby still runs Oracle, not Azure SQL."},
+        {"text": "Migrate to Azure Database for PostgreSQL using the Azure Database Migration Service, as it has the closest compatibility with Oracle syntax", "correct": false, "explanation": "Azure Database for PostgreSQL is a different database engine. It does not support DBMS_SCHEDULER, DBMS_RLS, or BFILE/CLOB data types natively."}
+      ],
+      "explanation": "GoldenGate to Oracle on Azure VMs then refactoring is the recommended path for Oracle-to-Azure SQL migrations with complex Oracle-specific features."
+    },
+    {
+      "id": "AZ305-MIG-013",
+      "domain": "Data Migration",
+      "question": "A media streaming company is migrating 100 million user records from MongoDB on-premises (sharded across 6 nodes, 40 TB total) to Azure Cosmos DB. The data model uses polymorphic schemas with varying document structures across different content types. The application team can tolerate a maximum 24-hour read-only window during migration.\n\nWhich Cosmos DB API and migration tool combination should you recommend?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Cosmos DB Table API with Azure Data Factory MongoDB connector to migrate data, using the 24-hour window for bulk copy", "correct": false, "explanation": "Table API is designed for NoSQL key-value workloads, not for document-centric polymorphic schemas."},
+        {"text": "Use Azure Cosmos DB MongoDB API (wire-protocol compatible) with MongoDB tools (mongodump/mongorestore) for initial bulk migration, then Azure Data Factory for incremental sync", "correct": true, "explanation": "Cosmos DB MongoDB API is wire-protocol compatible with MongoDB 3.6 and 4.0. mongodump/mongorestore can migrate the 40 TB in the 24-hour window. ADF MongoDB connector with change stream captures incremental changes post-cutover. Polymorphic schemas map naturally to MongoDB API documents."},
+        {"text": "Use Azure Cosmos DB Core (SQL) API with Azure Data Factory Cosmos DB connector, transforming MongoDB BSON documents to JSON during migration", "correct": false, "explanation": "Transforming 100M polymorphic BSON documents to JSON during migration with ADF adds significant processing overhead and would likely exceed the 24-hour window."},
+        {"text": "Deploy Azure Data Share to continuously replicate from on-premises MongoDB to Cosmos DB during the migration period", "correct": false, "explanation": "Azure Data Share does not support MongoDB as a data source."}
+      ],
+      "explanation": "Cosmos DB MongoDB API is the natural migration target for MongoDB workloads. Wire-protocol compatibility means mongodump/mongorestore work directly, and change streams in ADF capture incremental changes."
+    },
+    {
+      "id": "AZ305-MIG-014",
+      "domain": "Data Migration",
+      "question": "A healthcare organization has a data lake in on-premises HDFS with 800 TB of Parquet files organized by year/month/day partitions. They are migrating to Azure Data Lake Storage Gen2. After migration, they need to query the data using Azure Synapse Analytics serverless SQL pools.\n\nWhich partition strategy and file format optimization ensures Synapse query performance matches on-premises Hadoop query performance?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Convert all Parquet files to CSV format during migration to improve Synapse compatibility", "correct": false, "explanation": "CSV format is less efficient than Parquet for analytical queries. Parquet is columnar with built-in statistics that Synapse serverless uses for predicate pushdown."},
+        {"text": "Preserve the year/month/day partition structure in ADLS Gen2 and use Hive-style partition discovery in Synapse, maintaining the same query patterns from on-premises", "correct": true, "explanation": "ADLS Gen2 supports Hive-style partitioning (folder name = key=value). Synapse serverless SQL pools automatically discover partitions when the storage path follows the key=value convention. This preserves the partition pruning strategy used in on-premises Hadoop queries without any code changes."},
+        {"text": "Re-partition all files to a single partition key (by year) to reduce the number of small files Synapse must scan", "correct": false, "explanation": "Changing from year/month/day to year-only partitioning fundamentally changes the query granularity and degrades performance for month/day filtered queries."},
+        {"text": "Use Azure Data Factory to create external tables in Synapse pointing to ADLS Gen2, maintaining the same database/table metadata as the on-premises Hive metastore", "correct": false, "explanation": "The key to maintaining query performance is preserving the Hive-style partition structure, not just the table metadata."}
+      ],
+      "explanation": "Hive-style partitioning preserved in ADLS Gen2 enables automatic partition discovery in Synapse serverless SQL. Combined with preserved partitioning, this provides on-premises Hadoop query compatibility with zero application code changes."
+    },
+    {
+      "id": "AZ305-MIG-015",
+      "domain": "Data Migration",
+      "question": "A biotech company is migrating from on-premises Hadoop (HDFS) to Azure Data Lake Storage Gen2. They have 5 PB of data across 2 million files. The transcoding jobs run 24/7, so a cutover migration with a big-bang switchover is not acceptable.\n\nWhich migration approach supports the 24/7 transcoding workload with zero job modification?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Data Box to copy the full 5 PB to ADLS Gen2, then run a Spark job to re-write all paths in the job code from hdfs:// to abfs://", "correct": false, "explanation": "Modifying Spark job code from hdfs:// to abfs:// is a job modification. A big-bang cutover is also not acceptable for 24/7 workloads."},
+        {"text": "Deploy a hybrid HDFS cluster with ADLS Gen2 as a tiered storage layer, migrate data gradually using DistCp with -update flag, then remove HDFS storage after validation", "correct": true, "explanation": "ADLS Gen2 with Hadoop Transparent Encryption allows existing Spark jobs to continue reading from hdfs:// paths while data is gradually migrated. DistCp -update syncs only changed files, enabling gradual migration without downtime. After each dataset is validated, it is marked as ADLS-only tier."},
+        {"text": "Use Azure Data Factory with a Spark activity to read from HDFS and write to ADLS Gen2, running continuously for 90 days until all data is migrated", "correct": false, "explanation": "ADF Spark activity runs ADF-managed Spark clusters, not the company's existing Spark transcoding jobs. This creates a separate pipeline, not a migration of the actual data the 24/7 jobs read."},
+        {"text": "Mount ADLS Gen2 as a local filesystem using blobfuse, then point Spark jobs to the mount point path", "correct": false, "explanation": "blobfuse is a FUSE-based mechanism for Linux VMs, not for Hadoop/Spark environments. Spark running on Hadoop nodes cannot access blobfuse mounts as HDFS paths."}
+      ],
+      "explanation": "Transparent tiering with ADLS Gen2 + DistCp gradual migration preserves existing HDFS access paths in Spark jobs while migrating data incrementally. This is the recommended approach for Hadoop-to-ADLS migrations with 24/7 workloads."
+    },
+    {
+      "id": "AZ305-MIG-016",
+      "domain": "Infrastructure & Compute Migration",
+      "question": "A software development company has 150 VMs running a mix of Ubuntu 18.04, CentOS 7, and Windows Server 2019. They need to migrate to Azure within 6 weeks. The Linux VMs run production web applications using stateful TCP sessions. The Windows VMs run a mix of IIS/.NET apps and SQL Server Express.\n\nWhich VM migration strategy should you recommend?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Migrate agentless discovery for all 150 VMs, then use Azure Site Recovery for all workloads with multi-VM consistency for the Linux web apps", "correct": false, "explanation": "Agentless Azure Migrate discovery is only for VMware vSphere environments. CentOS and Ubuntu are typically physical or Hyper-V. Multi-VM consistency in ASR is more suited for DR than migration."},
+        {"text": "Use Azure Migrate for assessment, deploy Azure Migrate appliance for Hyper-V discovery, migrate Linux VMs with ASR, and migrate Windows IIS/.NET to Azure App Service with a staging deployment", "correct": true, "explanation": "Azure Migrate appliance handles Hyper-V discovery. ASR 'Migrate and modernize' supports Linux workloads including those with stateful TCP sessions. Windows IIS/.NET apps are better suited for App Service than IaaS lift-and-shift, reducing long-term operational cost. Parallel workstreams enable the 6-week timeline."},
+        {"text": "Convert all Linux VMs to Docker containers and deploy to Azure Kubernetes Service, migrate Windows VMs to Azure Virtual Machines", "correct": false, "explanation": "Containerizing 150 VMs in 6 weeks while maintaining stateful TCP sessions is not realistic. This approach re-engineers the application platform rather than migrating."},
+        {"text": "Use Azure Site Recovery for all 150 VMs with a single recovery plan, accepting that TCP session state may be lost during failover", "correct": false, "explanation": "ASR replicates at the VM level and preserves TCP session state as part of the VM's memory/state. Using a single recovery plan for all 150 VMs does not account for application dependency ordering."}
+      ],
+      "explanation": "The recommended approach uses Azure Migrate for assessment and discovery, ASR for Linux IaaS migration, and App Service for Windows .NET workloads. Parallel workstreams enable the 6-week timeline."
+    },
+    {
+      "id": "AZ305-MIG-017",
+      "domain": "Infrastructure & Compute Migration",
+      "question": "A retail company is migrating from on-premises VMware vSphere to Azure VMware Solution (AVS). They have a vSAN datastore with 200 TB of storage, and a vRealize Operations Manager instance used for performance monitoring. The migration must complete over a 6-month period to align with hardware refresh cycles.\n\nWhich migration and operations approach maintains continuity?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use HCX (Hybrid Cloud Extension) to migrate VMware VMs to AVS with vMotion, maintaining the same vCenter environment and migrating storage via HCX storage vMotion", "correct": true, "explanation": "HCX is the VMware-native migration tool for VMware-to-AVS migrations. It supports live vMotion (zero-downtime) and storage vMotion for datastore migration. HCX maintains vCenter visibility so vRealize Operations can continue monitoring the same workloads during migration. AVS is fully VMware-compatible, so HCX is the officially supported path."},
+        {"text": "Deploy Azure Arc to extend on-premises vCenter management to AVS, then migrate workloads using Azure Migrate", "correct": false, "explanation": "Azure Arc does not integrate with vCenter for VMware VM management. Azure Migrate does not support AVS as a migration target."},
+        {"text": "Convert all VMs to Azure-native format using Azure Migrate, then migrate storage using Azure Data Box", "correct": false, "explanation": "Azure Migrate does not support AVS as a source or target. AVS exists specifically to run VMware workloads without conversion."},
+        {"text": "Deploy Azure VMware Solution's built-in import feature to migrate vSAN datastores directly to AVS ExpressRoute Global Reach", "correct": false, "explanation": "AVS does not have a built-in vSAN import feature. ExpressRoute Global Reach connects ExpressRoute circuits, not datastores."}
+      ],
+      "explanation": "HCX is the correct VMware-to-AVS migration tool. It supports live migration (vMotion) and storage migration (storage vMotion) with zero-downtime. The 6-month phased migration aligns perfectly with HCX's bulk migration and wave-based replication features."
+    },
+    {
+      "id": "AZ305-MIG-018",
+      "domain": "Infrastructure & Compute Migration",
+      "question": "A global manufacturing company is migrating 500 VMs from 3 regional on-premises data centers to Azure. Each data center has different network ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16). They need to maintain the existing IP addressing for application dependencies during migration, and must integrate with an existing ExpressRoute circuit that connects to Microsoft 365.\n\nWhich network architecture supports the IP preservation requirement with the LEAST number of VNet peerings?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Deploy a single large VNet (10.0.0.0/7) covering all address spaces, and configure user-defined routes for each region's traffic", "correct": false, "explanation": "Azure VNets cannot span overlapping address spaces. Azure does not support overlapping CIDR ranges within the same subscription's address space hierarchy."},
+        {"text": "Deploy one VNet per region (with the same IP ranges as on-premises), configure VNet-to-VNet VPN between regional VNets, and connect the primary region VNet to ExpressRoute", "correct": true, "explanation": "Each regional VNet with the original on-premises IP range preserves IP addressing. VNet-to-VNet VPN (not peering, since ranges overlap) connects the regions. Only one VNet connects to ExpressRoute for Microsoft 365 connectivity for all regions through the VPN tunnel."},
+        {"text": "Deploy Azure Virtual WAN with SD-WAN devices in each data center, migrating each region's network range to a separate Virtual WAN hub", "correct": false, "explanation": "Virtual WAN supports multi-region enterprise architectures, but SD-WAN devices are an additional hardware investment. The VPN-based approach is simpler for the IP preservation requirement."},
+        {"text": "Use Azure Private Link to expose on-premises services to Azure VMs with NAT translation to preserve IP addresses", "correct": false, "explanation": "Azure Private Link provides access to Azure PaaS services, not VM-to-VM network connectivity with IP preservation."}
+      ],
+      "explanation": "Per-region VNet with VNet-to-VNet VPN preserves IP addressing while connecting all regions. ExpressRoute at the primary hub provides M365 connectivity for all regions through the VPN tunnel."
+    },
+    {
+      "id": "AZ305-MIG-019",
+      "domain": "Infrastructure & Compute Migration",
+      "question": "A financial services firm is migrating from on-premises mainframe and AIX UNIX systems to Azure. The mainframe runs a COBOL batch processing system that processes 10 million transactions per night. The AIX systems run a mix of custom applications including a real-time trading platform with sub-millisecond latency requirements.\n\nWhich migration strategy is appropriate for each workload?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Migrate the COBOL batch system to Azure Batch with HPC VMs, and re-platform the trading platform to Azure Functions with Event Hubs", "correct": false, "explanation": "Azure Batch is designed for parallelizable workloads, not sequential night-batch COBOL processing. Azure Functions with Event Hubs introduces latency (typically 10-100ms+) unsuitable for sub-millisecond trading."},
+        {"text": "Migrate the COBOL system to Azure Virtual Machines with Micro Focus Enterprise Server, preserving existing JCL and VSAM data files. For the AIX trading platform: use Azure VMs with IBM AIX support or re-architect to a lower-latency Azure-native solution", "correct": true, "explanation": "Micro Focus Enterprise Server on Azure VMs is the supported path for mainframe application migration (rehost/replatform). COBOL, CICS, JCL, and VSAM are preserved without full refactoring. For the AIX trading platform, IBM's Cloud Modernization Engine supports AIX on Azure VMs, or latency-sensitive components can be re-architected to Azure-native solutions."},
+        {"text": "Refactor the COBOL batch system to Azure Logic Apps with scheduled triggers and Azure SQL for transaction storage", "correct": false, "explanation": "Refactoring COBOL to Logic Apps is not a standard migration path. COBOL batch processing requires mainframe-specific runtime (CICS, IMS) that cannot be replicated in Logic Apps."},
+        {"text": "Deploy Azure Virtual Machines with FPGA-enabled instances for hardware acceleration of the trading platform", "correct": false, "explanation": "Azure does not offer FPGA-enabled VMs for general use. FPGA acceleration is available through Azure ML (FPGA-as-a-Service) which is not applicable to trading platform workloads."}
+      ],
+      "explanation": "Mainframe migration uses Micro Focus Enterprise Server on Azure VMs to preserve COBOL/CICS/JCL without refactoring. AIX trading platforms require either partner-supported AIX on Azure or re-architecture to Azure-native solutions for sub-millisecond requirements."
+    },
+    {
+      "id": "AZ305-MIG-020",
+      "domain": "Infrastructure & Compute Migration",
+      "question": "A software company is migrating from on-premises Kubernetes (k8s 1.24) to Azure Kubernetes Service (AKS). They have 200 microservices organized into 30 namespaces, with custom Ingress controllers, a service mesh (Istio), and secrets stored in HashiCorp Vault. The cluster uses RBAC with 50 service accounts.\n\nWhich migration sequence preserves cluster configuration and minimizes application downtime?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Deploy AKS with the same k8s version (1.24), install Istio and Vault CSI provider, then use Velero to restore the full cluster state including all namespaces, services, and RBAC objects", "correct": true, "explanation": "AKS supports k8s 1.24. Velero with the restic plugin can migrate persistent volume state. Installing the same Istio version and Vault CSI provider in AKS preserves the service mesh configuration and secrets. RBAC objects are migrated as YAML manifests. This sequence migrates configuration before traffic, enabling validation before cutover."},
+        {"text": "Use Azure Migrate to discover and assess the on-premises k8s cluster, then use Azure Site Recovery to migrate the entire cluster as a single unit", "correct": false, "explanation": "Azure Migrate does not support Kubernetes cluster migration. Azure Site Recovery operates at the VM level, not the container orchestration level."},
+        {"text": "Push container images to Azure Container Registry, then redeploy all 200 microservices to AKS using Helm charts, then update the Ingress DNS to point to the new AKS cluster", "correct": false, "explanation": "This approach migrates workloads but loses all cluster-level configuration: RBAC, service mesh policies, network policies, custom Ingress configurations, and secrets."},
+        {"text": "Use GitOps with Flux or ArgoCD to sync the git repository containing all k8s manifests to the new AKS cluster, then gradually shift traffic using Istio virtual service weight adjustments", "correct": true, "explanation": "If the on-premises cluster uses GitOps, the AKS cluster can be bootstrapped by pointing Flux/ArgoCD to the same git repository. Istio virtual service weight-based traffic shifting enables canary migration: route 0% traffic to new cluster initially, gradually increase while monitoring."}
+      ],
+      "explanation": "Velero migration preserves cluster configuration (RBAC, service mesh, Ingress) while Istio virtual service weights enable traffic shifting without DNS changes. GitOps is the preferred approach when manifests are git-managed."
+    },
+    {
+      "id": "AZ305-MIG-021",
+      "domain": "Application Migration",
+      "question": "A logistics company is migrating a .NET 4.8 WCF (Windows Communication Foundation) application to Azure. The WCF service uses net.tcp binding for internal communication with a Windows service client, and basicHttpBinding for external partner integration. The application cannot be refactored to .NET Core or gRPC within the project timeline.\n\nWhich Azure hosting strategy maintains the existing bindings?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Host the WCF service in Azure App Service with an Application Request Routing (ARR) proxy to handle net.tcp to HTTP conversion for internal clients", "correct": false, "explanation": "Azure App Service does not support net.tcp binding. ARR is a web farm proxy, not a net.tcp-to-HTTP converter."},
+        {"text": "Deploy the WCF service to Azure Virtual Machines with Windows Server, using Azure Load Balancer with HA ports for net.tcp clients and Application Gateway for basicHttpBinding external partners", "correct": true, "explanation": "Azure VMs with Windows Server fully support WCF with all binding types including net.tcp and basicHttpBinding. Azure Load Balancer Standard/HA ports handles internal net.tcp traffic. Application Gateway with WAF handles external HTTP(S) traffic for partner integration. This is the only Azure hosting option that preserves all existing WCF bindings without modification."},
+        {"text": "Containerize the WCF service with Windows containers and deploy to Azure Kubernetes Service with a sidecar proxy for net.tcp passthrough", "correct": false, "explanation": "AKS does not support Windows container node pools for production workloads. net.tcp in a Windows container still requires a Windows node, and sidecar proxies do not convert net.tcp to HTTP."},
+        {"text": "Migrate the WCF service to Azure Functions with a custom HTTP trigger, replacing net.tcp with SignalR for real-time communication", "correct": false, "explanation": "Azure Functions does not support WCF. Replacing net.tcp with SignalR is a re-architecture that would require changes to both the WCF service and the Windows service client."}
+      ],
+      "explanation": "WCF net.tcp binding requires Windows Server infrastructure — only Azure VMs provide this. Load Balancer + Application Gateway provides both internal (net.tcp) and external (HTTP) access without modifying the WCF application."
+    },
+    {
+      "id": "AZ305-MIG-022",
+      "domain": "Application Migration",
+      "question": "A gaming company runs a real-time multiplayer game server on an on-premises bare-metal server farm with 50 game servers communicating via UDP sockets. The game state is synchronized between servers using a custom UDP-based protocol. The company wants to migrate to Azure with the same sub-10ms latency requirement.\n\nWhich Azure compute service maintains UDP socket compatibility?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Azure Virtual Machine Scale Sets with UDP networking enabled on the network interface", "correct": false, "explanation": "Azure VMs support UDP at the OS level, but standard VMs do not provide RDMA-level latency for UDP communication."},
+        {"text": "Azure Virtual Machines with bare-metal instance sizes (HBv3, HC, HV) that provide RDMA over Converged Ethernet (RoCE) for UDP communication", "correct": true, "explanation": "Azure HBv3 and HC VMs provide RDMA over RoCE, which delivers sub-2 microsecond latency for UDP/TCP traffic. These bare-metal HPC VMs are designed for MPI and RDMA workloads and are the closest Azure equivalent to bare-metal on-premises game servers. They support UDP sockets natively at RDMA speeds."},
+        {"text": "Azure Container Instances with GPU acceleration for game server workloads", "correct": false, "explanation": "ACI does not support bare-metal or RDMA connectivity. GPU acceleration in ACI is for inference, not game server logic."},
+        {"text": "Azure Sphere for edge computing to maintain on-premises UDP latency while using Azure for management", "correct": false, "explanation": "Azure Sphere is an IoT edge platform for small embedded devices, not for high-performance game servers with sub-10ms latency requirements."}
+      ],
+      "explanation": "Azure bare-metal HPC VMs (HBv3, HC) with RDMA over RoCE provide the lowest latency UDP communication in Azure, suitable for real-time multiplayer game servers."
+    },
+    {
+      "id": "AZ305-MIG-023",
+      "domain": "Application Migration",
+      "question": "A retail company has an e-commerce platform composed of 15 microservices: 8 Java Spring Boot services, 5 Node.js services, and 2 Python ML recommendation services. The services communicate via REST APIs and Apache Kafka for async messaging. They are migrating to Azure and want to minimize operational overhead.\n\nWhich Azure hosting combination reduces operational overhead the most?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Deploy all services to Azure Kubernetes Service with Kafka on Confluent Cloud managed service", "correct": false, "explanation": "AKS + Confluent Cloud is valid but does not minimize operational overhead. AKS still requires cluster management, node pool management, and scaling configuration."},
+        {"text": "Rehost Java Spring Boot and Node.js to Azure App Service (Premium) with Deployment Slots, deploy Python ML to Azure Container Instances, and use Event Hubs instead of Kafka", "correct": false, "explanation": "Replacing Kafka with Event Hubs is a re-architecture that requires code changes. Azure Container Instances provides no orchestration, scaling, or high availability for production ML services."},
+        {"text": "Deploy Java Spring Boot and Node.js to Azure App Service (Premium) with Deployment Slots, deploy Python ML to Azure Machine Learning endpoints, and use Azure Event Hubs for async messaging with Kafka protocol support", "correct": true, "explanation": "Azure App Service with Deployment Slots provides zero-effort staging/production swap for Java and Node.js. Azure ML endpoints provide serverless inference endpoints for Python ML models with auto-scaling. Event Hubs with Kafka protocol support provides async messaging without replacing Kafka clients in application code."},
+        {"text": "Use Azure Service Fabric for all microservices to maintain a consistent hosting platform", "correct": false, "explanation": "Azure Service Fabric does not support Node.js or Python as first-class programming models. Running Node.js or Python in Service Fabric requires containerization, which brings back operational overhead."}
+      ],
+      "explanation": "App Service for Java/Node.js + Azure ML for Python + Event Hubs with Kafka compatibility minimizes operational overhead while providing enterprise-grade hosting for each workload type."
+    },
+    {
+      "id": "AZ305-MIG-024",
+      "domain": "Application Migration",
+      "question": "A healthcare SaaS company is migrating their multi-tenant application from on-premises to Azure. The application uses a shared SQL Server database with Row-Level Security (RLS) for tenant isolation. They want to move to Azure SQL Database to reduce costs, but the legal team requires hard tenant data isolation (not just RLS).\n\nWhich database architecture meets the isolation requirement while optimizing cost?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Deploy Azure SQL Database with RLS as the only tenant isolation mechanism, relying on application-layer enforcement", "correct": false, "explanation": "RLS provides soft tenant isolation. A misconfigured query or SQL injection could cross tenant boundaries. For healthcare with legal isolation requirements, this does not meet the hard isolation mandate."},
+        {"text": "Deploy one Azure SQL Database per tenant in an elastic pool, using SQL Elastic Jobs for schema updates", "correct": false, "explanation": "One database per tenant with elastic pool provides hard isolation but at significant cost. For large numbers of tenants, this becomes expensive compared to single-database approaches."},
+        {"text": "Deploy Azure SQL Managed Instance with per-tenant CMK (customer-managed keys) in Azure Key Vault for encryption at rest", "correct": true, "explanation": "Azure SQL Managed Instance supports customer-managed keys per database (via TDE with CMK). This provides hard encryption isolation at the tenant level. For healthcare with legal isolation requirements, Managed Instance with CMK per database satisfies the hard isolation requirement while using elastic pools for cost optimization."},
+        {"text": "Use Azure Cosmos DB with per-container throughput for hard tenant isolation across all tenants", "correct": false, "explanation": "Azure Cosmos DB provides per-container isolation but is not a drop-in replacement for SQL Server with RLS-based applications. The application uses SQL Server semantics that would require significant re-architecture for Cosmos DB."}
+      ],
+      "explanation": "Azure SQL Managed Instance supports per-database TDE with CMK, which provides hard encryption isolation. Combined with elastic pools for cost optimization, this is the best fit for healthcare isolation requirements."
+    },
+    {
+      "id": "AZ305-MIG-025",
+      "domain": "Application Migration",
+      "question": "An enterprise company is migrating a PHP 7.2 monolithic e-commerce application to Azure. The application uses a local filesystem for product image storage and session management. The company wants to minimize changes to the application code. The e-commerce site handles 10,000 concurrent users during peak.\n\nWhich Azure hosting and storage combination requires the LEAST code changes?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Deploy to Azure App Service with Azure Files for session persistence and Azure Blob Storage for images, using a startup script to mount Azure Files to the local filesystem path", "correct": false, "explanation": "Azure Files can be mounted to the App Service filesystem via a startup script, but session persistence requires a session state provider (like Redis), not Azure Files. Azure Files is not suitable for PHP session storage as it does not support file-based session locking."},
+        {"text": "Deploy to Azure Kubernetes Service with a PersistentVolumeClaim backed by Azure Disk for shared storage across pods", "correct": false, "explanation": "Azure Disk PVC provides block storage that can only be mounted to a single pod at a time. A multi-pod deployment requires a shared filesystem, which Azure Disk does not provide."},
+        {"text": "Deploy to Azure Virtual Machine Scale Sets with a custom script extension to reconfigure PHP to use Redis for sessions and Azure Blob Storage SDK for images", "correct": false, "explanation": "Reconfiguring PHP to use Redis for sessions and updating image upload code to use Blob SDK requires code changes or application configuration file modifications."},
+        {"text": "Deploy to Azure App Service with a network drive mapped to an Azure Storage file share, enabling the existing local filesystem paths to work unchanged", "correct": true, "explanation": "Azure App Service supports Azure Storage file shares as network drives (mapped via SMB). This maps directly to the local filesystem paths the PHP app uses, requiring zero application code changes. For session management, App Service also supports ARR affinity cookie for in-process session storage."}
+      ],
+      "explanation": "Azure App Service with Azure Storage file shares mapped as network drives is the least-invasive migration for PHP apps using local filesystem. SMB mounting preserves all existing file paths in the application code with zero changes."
+    },
+    {
+      "id": "AZ305-MIG-026",
+      "domain": "Governance & Compliance",
+      "question": "A government contractor is migrating from on-premises to Azure and must meet FedRAMP High compliance. They have 300 resources that must be audited monthly for compliance with Azure Policy definitions. They need to identify non-compliant resources within 24 hours of any policy change.\n\nWhich governance and monitoring architecture supports the 24-hour compliance detection requirement?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Security Center with the 'Continuous export' feature streaming security recommendations to Azure Event Hubs, and process events with Azure Logic Apps to trigger email notifications", "correct": false, "explanation": "Security Center continuous export is for security alerts, not Azure Policy compliance state changes. Azure Policy compliance state is evaluated on a schedule (by default every 24 hours)."},
+        {"text": "Use Azure Policy with a custom initiative definition, configure the compliance evaluation to trigger an Azure Event Grid event on every state change", "correct": false, "explanation": "Azure Policy does not emit Event Grid events on compliance state changes. Policy compliance state is retrieved via Azure Resource Graph queries or the Policy Compliance REST API, not via an event-driven model."},
+        {"text": "Use Azure Policy with an evaluation frequency set to 'on-change' (via Azure Resource Manager triggered evaluation), and configure Azure Resource Graph queries scheduled via Azure Automation to run every hour, pushing results to Azure Monitor Workbook for the compliance dashboard", "correct": true, "explanation": "Azure Policy on-change evaluation triggers immediately when a resource changes. Azure Resource Graph scheduled queries in Azure Automation can run compliance queries hourly, and Azure Monitor Workbooks provide near-real-time compliance dashboards."},
+        {"text": "Deploy Azure Blueprints with a managed identity and configure the blueprint assignment to automatically remediate non-compliant resources via Azure Policy effects", "correct": false, "explanation": "Azure Blueprints assigns policy definitions but does not provide 24-hour compliance detection. It does not have a continuous monitoring cadence faster than the Policy evaluation cycle."}
+      ],
+      "explanation": "Azure Policy on-change evaluation + hourly Resource Graph queries + Azure Monitor Workbooks provides near-real-time compliance visibility. The on-change evaluation triggers immediately, and hourly ARG queries catch policy drift."
+    },
+    {
+      "id": "AZ305-MIG-027",
+      "domain": "Governance & Compliance",
+      "question": "A company undergoing SAP to Azure migration needs to manage 2,000 Azure resources across 4 subscriptions (Production, QA, Dev, DR) with different compliance requirements per environment. The security team requires that all resources in Production be tagged with 'Environment=Production' and 'DataClassification=Confidential' before deployment, blocking deployment if tags are missing.\n\nWhich Azure policy approach implements this enforcement?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Deploy an Azure Policy initiative at the Management Group level with a 'Deny' effect for missing 'Environment' and 'DataClassification' tags, targeting the Production subscription only", "correct": true, "explanation": "Azure Policy with Deny effect at the Management Group level with scope targeting the Production subscription blocks resource creation/update if the required tags are missing. Management Group level allows inheritance across all 4 subscriptions while selectively targeting only Production through scope exclusion."},
+        {"text": "Use Azure Blueprints to assign a policy initiative that appends required tags to resources after deployment using the 'append' effect", "correct": false, "explanation": "The 'append' effect adds tags AFTER deployment but does not BLOCK non-compliant deployments. The requirement is to enforce tags BEFORE deployment, which requires Deny effect."},
+        {"text": "Deploy Azure Policy with 'Audit' effect and use Azure DevOps pipeline to check for tags before resource deployment", "correct": false, "explanation": "Azure DevOps pipeline as a gate is a manual enforcement layer, not an Azure-native control. Policy with Audit effect does not block deployments."},
+        {"text": "Use Azure Resource Manager templates with parameters for tags, and enforce tag values through ARM template policy validation", "correct": false, "explanation": "ARM template parameter validation does not exist as a policy mechanism. Tags must be enforced through Azure Policy, not ARM template parameters."}
+      ],
+      "explanation": "Azure Policy with Deny effect is the only platform-native way to block resource creation when required tags are missing. Applied at the Management Group level with scope targeting Production ensures the control is enforced only where required."
+    },
+    {
+      "id": "AZ305-MIG-028",
+      "domain": "Governance & Compliance",
+      "question": "A multinational company is consolidating 5 acquired companies into a single Azure tenant. Each acquired company has its own Azure subscriptions with existing role assignments, resource groups, and spending budgets. The consolidation must be completed within 90 days.\n\nWhich steps should be performed IN ORDER to achieve the consolidation with proper governance?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "1. Create a Management Group hierarchy 2. Move each company's subscriptions under the management group 3. Apply Azure Policy at each management group 4. Use Azure Resource Mover to consolidate resource groups 5. Update role assignments to use management group scope", "correct": true, "explanation": "The correct sequence: (1) Establish the management group hierarchy first to create the governance structure, (2) move subscriptions into the hierarchy to enable policy inheritance, (3) apply policies at appropriate management group levels, (4) use Resource Mover to move resource groups to the target subscription/rg structure, (5) update RBAC to management group scope for company-wide access."},
+        {"text": "1. Use Azure Resource Mover to move all resource groups to a single subscription 2. Create new role assignments at the subscription level 3. Apply Azure Policy to the consolidated subscription 4. Delete the old management groups 5. Create a new flat management group structure", "correct": false, "explanation": "Resource Mover before establishing the management group hierarchy means workloads are moved without governance controls in place. A flat management group structure provides no organizational hierarchy for policy inheritance."},
+        {"text": "1. Create Azure AD administrative units for each acquired company 2. Assign Entra ID roles to administrative units 3. Migrate resources using Resource Mover 4. Apply Azure Policy at the subscription level 5. Implement Azure Budgets for spending alerts", "correct": false, "explanation": "Azure AD administrative units are for identity management, not resource governance. Entra ID roles assigned to admin units do not control Azure resource access."},
+        {"text": "1. Export all resource configurations using Azure Resource Graph queries 2. Deploy a new landing zone using Azure Landing Zone Terraform templates 3. Migrate resources using Azure Site Recovery 4. Run compliance validation using Azure Policy 5. Decommission old subscriptions", "correct": false, "explanation": "Azure Site Recovery is for DR/failover of VMs, not for resource migration/consolidation. Azure Landing Zone Terraform templates deploy the landing zone but do not migrate existing resources."}
+      ],
+      "explanation": "Management Group hierarchy first provides the governance container. Subscription movement under the hierarchy enables policy inheritance. Resource Mover handles actual resource migration. Management group-scoped RBAC replaces subscription-level role assignments."
+    },
+    {
+      "id": "AZ305-MIG-029",
+      "domain": "Advanced Migration Scenarios",
+      "question": "A large enterprise is performing a multi-wave migration of 5,000 VMs from on-premises vSphere to Azure using Azure Migrate and Azure Site Recovery. During wave 3, a network misconfiguration causes 200 VMs to lose connectivity after failover. The team needs to recover these VMs quickly while investigating the root cause.\n\nWhich Site Recovery capability allows the fastest recovery without losing the ongoing replication?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use the 'Test Failover' feature to validate VM connectivity in an isolated network while replication continues", "correct": false, "explanation": "Test Failover creates VMs in an isolated test network and does not affect production VMs or the replication. However, it does not recover connectivity for already-failed-over VMs."},
+        {"text": "Use 'Planned Failover' to reverse the direction of replication and failback to on-premises, then re-run the migration wave", "correct": false, "explanation": "Planned Failover for failback requires the on-premises site to be operational. If the site was decommissioned after wave 3, failback is not possible."},
+        {"text": "Use 'Reprotect' action on the affected VMs to re-establish replication to Azure while keeping the failed-over VMs running, then perform a planned failover with corrected network settings", "correct": true, "explanation": "ASR's Reprotect action re-establishes replication from the failed-over Azure VMs back to ASR, enabling the VM to be failed over again to a corrected network configuration. This preserves the data replicated during wave 3 while allowing a corrected failover."},
+        {"text": "Delete the failed-over VMs and restart the replication from the last synced checkpoint using the original migration wave plan", "correct": false, "explanation": "Deleting the VMs loses the failed-over state and any data written during the 200 VM session. ASR maintains recovery points - deletion is not necessary."}
+      ],
+      "explanation": "ASR's Reprotect workflow is designed for this scenario: after a failed failover, reprotect re-establishes the replication direction and allows a corrected planned failover. All data in the current recovery points is preserved and the VMs remain running in Azure."
+    },
+    {
+      "id": "AZ305-MIG-030",
+      "domain": "Advanced Migration Scenarios",
+      "question": "A global bank is migrating from an on-premises MuleSoft ESB to Azure. The ESB handles 2,000 integrations connecting 300 enterprise systems using message routing, transformation, and orchestration patterns.\n\nWhich Azure integration service combination preserves the existing ESB patterns?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Logic Apps for all integration patterns, replacing MuleSoft message routing with Logic Apps workflow conditions", "correct": false, "explanation": "Logic Apps is designed for API integrations and simple workflow orchestration, not for complex ESB patterns like message brokering, complex routing rules, and transactional outbox patterns."},
+        {"text": "Use Azure API Management as a facade in front of MuleSoft, gradually migrating APIs to native Azure services", "correct": false, "explanation": "Running MuleSoft in Azure as a managed service alongside APIM adds complexity and cost. The goal is migration OFF MuleSoft."},
+        {"text": "Use Azure Service Bus with Azure Functions for event-driven integrations, Azure Data Factory for batch data integrations, and Azure API Management for API-based integrations", "correct": true, "explanation": "MuleSoft message routing → Azure Service Bus topics/subscriptions. MuleSoft transformation → Azure Functions with Liquid/JSON transforms. MuleSoft orchestration → Azure Logic Apps or Durable Functions. MuleSoft batch integrations → Azure Data Factory. This 3-service approach maps each MuleSoft pattern to a purpose-built Azure service."},
+        {"text": "Deploy MuleSoft Runtime Fabric on Azure Kubernetes Service to maintain the same MuleSoft runtime while using Azure as the underlying infrastructure", "correct": false, "explanation": "Running MuleSoft on AKS still requires MuleSoft licensing, runtime management, and update cycles. This is a rehost, not a migration away from MuleSoft."}
+      ],
+      "explanation": "Azure Service Bus + Functions + ADF + APIM covers the full MuleSoft ESB pattern spectrum: service bus for messaging/routing, Functions for transformations, ADF for batch ETL, APIM for API management."
+    },
+    {
+      "id": "AZ305-MIG-031",
+      "domain": "Advanced Migration Scenarios",
+      "question": "A telecommunications company is migrating from on-premises Teradata (50TB) to Azure Synapse Analytics. The existing Teradata environment uses complex BTEQ scripts for ETL, with 500 stored procedures and 200 macros. The data model includes temporal tables with valid-time and transaction-time dimensions.\n\nWhich migration and conversion strategy handles the Teradata-specific components?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Data Factory with the Teradata connector for initial bulk data extraction, then manually convert BTEQ scripts to T-SQL stored procedures", "correct": false, "explanation": "ADF Teradata connector does not support BTEQ script execution. BTEQ includes conditional logic, loops, and error handling not present in ADF copy activities."},
+        {"text": "Deploy Teradata on Azure using Teradata Cloud (or Teradata on Azure VMs) for the migration duration, using Teradata's native migration tools (Teradata Migration Studio) to convert BTEQ scripts and macros, then migrate to Azure Synapse using Data Factory with PolyBase/COPY", "correct": true, "explanation": "The pragmatic approach: (1) establish a Teradata environment in Azure (Teradata Cloud on Azure or Teradata on Azure VMs), (2) use Teradata Migration Studio to convert BTEQ scripts and macros to standard Teradata SQL, (3) validate the converted ETL, (4) use Data Factory with PolyBase/COPY to migrate data to Azure Synapse."},
+        {"text": "Use the Teradata QueryGrid to directly query Teradata data from Azure Synapse without migrating the data", "correct": false, "explanation": "Teradata QueryGrid enables querying non-Teradata databases FROM Teradata, not querying Teradata FROM Azure. It cannot be used as a migration bridge strategy for Synapse."},
+        {"text": "Use Azure Data Factory with SAP CDC connector to extract data from the Oracle databases, then migrate to Synapse", "correct": false, "explanation": "ADF SAP CDC connector does not support Oracle databases as a source. This option is unrelated to the Teradata migration scenario."}
+      ],
+      "explanation": "Teradata to Azure Synapse is one of the most complex database migrations. The recommended pattern uses Teradata Cloud on Azure as an interim step, converting BTEQ/macros with Teradata's own tools before moving to Synapse."
+    },
+    {
+      "id": "AZ305-MIG-032",
+      "domain": "Advanced Migration Scenarios",
+      "question": "An insurance company is migrating from an on-premises Zuora SaaS environment (multi-tenant CRM/billing) to a new SaaS vendor. They have 5 years of billing history data in Zuora that must be transferred to the new vendor's data model. The new SaaS vendor provides a REST API but no bulk data import tool.\n\nWhich migration approach transfers 5 years of billing history efficiently?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Data Factory with a REST API linked service to pull data from Zuora and push to the new vendor's REST API in batches", "correct": true, "explanation": "ADF REST connector supports pagination, authentication, and batching when calling source and target REST APIs. Zuora REST API can export data in batches (using SOQL queries with LIMIT/OFFSET or date-based filters). ADF's Mapping Data Flows can handle the data transformation between Zuora's data model and the new vendor's data model."},
+        {"text": "Use Azure Logic Apps with an integration account to orchestrate the data migration from Zuora to the new vendor", "correct": false, "explanation": "Logic Apps is designed for API-to-API workflow orchestration, not bulk data migration. For 5 years of billing data (potentially millions of records), Logic Apps' consumption-based pricing would be prohibitively expensive."},
+        {"text": "Export all data from Zuora to CSV files, upload to Azure Blob Storage, then use Azure Databricks with a custom connector to load data into the new vendor's API", "correct": false, "explanation": "Databricks is over-engineered for this scenario. The CSV intermediate step introduces data freshness issues and manual steps."},
+        {"text": "Use the new vendor's data migration service, which provides a direct connector to Zuora for one-click migration", "correct": false, "explanation": "The question states the new vendor provides only a REST API with no bulk import tool. If such a migration service existed, the question would not need to explore ADF approaches."}
+      ],
+      "explanation": "ADF REST connector with pagination and batching is the standard approach for migrating from SaaS-to-SaaS via REST APIs. Mapping Data Flows handle the data model transformation between Zuora and the new vendor."
+    },
+    {
+      "id": "AZ305-MIG-033",
+      "domain": "Advanced Migration Scenarios",
+      "question": "A global retail chain is consolidating 8 regional SAP systems (each running SAP ERP on its own Oracle database) into a single SAP S/4HANA environment in Azure. Each regional system has 18 months of transactional data. They need to migrate all historical data while minimizing the production cutover window.\n\nWhich SAP migration approach achieves the minimum cutover window?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use SAP S/4HANA Migration Cockpit (LMIG) with the 'New General Ledger Migration' approach to migrate all 8 systems in parallel using SAP Landscape Management", "correct": false, "explanation": "SAP S/4HANA Migration Cockpit is designed for migrating a single SAP ERP system to S/4HANA within the same system. It does not support consolidation of 8 separate SAP systems into one S/4HANA."},
+        {"text": "Use SAP S/4HANA Central Finance (CFIN) with SAP HANA System Replication (HSR) from each regional system, then perform a final delta sync and go-live on the CFIN system", "correct": true, "explanation": "SAP Central Finance is specifically designed for multi-system consolidation scenarios. CFIN with HSR enables continuous replication from all 8 regional SAP systems to the central S/4HANA Finance system. The final delta sync captures the last changes before cutover, minimizing the cutover window to hours rather than days."},
+        {"text": "Use SAP Database Migration Option (DMO) with System Move to migrate each regional Oracle database to S/4HANA in sequence, then merge the client data using SAP Client Copy", "correct": false, "explanation": "DMO with System Move is for migrating a single SAP system to S/4HANA (one-to-one). Client Copy does not consolidate transactional data across 8 separate legal entities."},
+        {"text": "Deploy Azure Data Factory with SAP CDC connector to extract data from all 8 Oracle databases and load into S/4HANA via IDoc interfaces", "correct": false, "explanation": "ADF SAP CDC connector does not support Oracle databases as a source. IDoc is for SAP-to-SAP communication, not for bulk data ingestion from Oracle into S/4HANA."}
+      ],
+      "explanation": "SAP Central Finance (CFIN) with HSR is the SAP-recommended approach for multi-system consolidation to S/4HANA. HSR provides near-real-time replication from each regional system, minimizing the cutover delta."
+    },
+    {
+      "id": "AZ305-MIG-034",
+      "domain": "Network Migration & Hybrid Connectivity",
+      "question": "A manufacturing company has 12 branch offices connected via MPLS to an on-premises data center. Each branch has a PBX phone system using SIP trunking that routes through the data center. They are migrating the data center to Azure and want to maintain SIP trunking for all 12 branches.\n\nWhich Azure network service maintains SIP trunking with the LEAST operational overhead?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Deploy Azure Virtual WAN with SD-WAN devices at each branch, migrating SIP traffic to ExpressRoute private peering through the Virtual WAN hub", "correct": true, "explanation": "Azure Virtual WAN with SD-WAN devices replaces MPLS connectivity with SD-WAN at each branch. The Virtual WAN hub connects to Azure via ExpressRoute private peering. SIP trunking traffic flows through the ExpressRoute private peering to the Azure virtual data center (Session Border Controller VMs or Azure Communication Services). This is a direct MPLS-to-SDWAN replacement."},
+        {"text": "Deploy Azure ExpressRoute at each branch office with a SIP-compatible router, bypassing the Azure data center migration", "correct": false, "explanation": "ExpressRoute is a point-to-point circuit between a branch and Azure, not a replacement for MPLS hub-and-spoke connectivity. Deploying ExpressRoute at each of 12 branches is expensive and does not address the SIP trunking routing through the central data center."},
+        {"text": "Use Azure Communication Services with a custom SIP gateway to terminate SIP traffic and bridge to Microsoft Teams for all branch offices", "correct": false, "explanation": "Azure Communication Services SIP Gateway (in preview) can bridge SIP trunking to Teams, but it requires Teams licensing for all 12 branches and a complete phone system replacement, not a transparent migration."},
+        {"text": "Migrate the SIP trunking to Azure Kubernetes Service with a self-hosted SIP proxy container", "correct": false, "explanation": "Running a SIP proxy on AKS requires managing the AKS cluster, container networking, and SIP proxy configuration. This adds significant operational overhead compared to a managed SD-WAN solution."}
+      ],
+      "explanation": "Azure Virtual WAN with SD-WAN is the Azure-native replacement for MPLS. SD-WAN devices at branches connect to the Virtual WAN hub over broadband internet with WAN optimization, maintaining the same routing topology as MPLS."
+    },
+    {
+      "id": "AZ305-MIG-035",
+      "domain": "Network Migration & Hybrid Connectivity",
+      "question": "A company is migrating from on-premises Citrix Virtual Apps and Desktops (XenApp) to Windows Virtual Desktop (now Azure Virtual Desktop) in Azure. They have 5,000 users across 3 regions. Each region has a Citrix XenApp farm with its own user profile management (FSLogix). They need to maintain the same profile experience during and after migration.\n\nWhich AVD migration and profile strategy maintains the existing user experience?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Deploy AVD with a single global host pool, and migrate FSLogix profile containers to Azure Files with SMB multi-channel enabled for the same profile storage path", "correct": true, "explanation": "AVD supports FSLogix natively. FSLogix profile containers stored in Azure Files (with SMB multi-channel for performance) provide the same profile experience as on-premises Citrix. The same profile path can be maintained by updating the FSLogix agent configuration in AVD session hosts. Azure Files with RBAC and Private Endpoints provides security and performance equivalent to on-premises file storage."},
+        {"text": "Deploy AVD with regional host pools per region, and use User Profile Disks (UPD) for profile management to avoid changing the FSLogix configuration", "correct": false, "explanation": "User Profile Disks (UPD) is a legacy profile technology deprecated in favor of FSLogix. UPD is not available in AVD for multi-session host pools."},
+        {"text": "Deploy AVD with FSLogix pointing to the existing on-premises file share via ExpressRoute, maintaining the same profile storage", "correct": false, "explanation": "FSLogix profiles over ExpressRoute to on-premises storage introduces latency that degrades the user experience. This defeats the purpose of migrating to AVD in Azure."},
+        {"text": "Migrate all user profiles to OneDrive for Business using the OneDrive Migration Tool, replacing FSLogix entirely", "correct": false, "explanation": "OneDrive for Business is a file sync/share service, not a user profile virtualization solution. FSLogix maintains the complete Windows user profile state that cannot be replaced by a file synchronization service."}
+      ],
+      "explanation": "FSLogix to Azure Files is the standard profile migration for AVD. Azure Files with SMB multi-channel provides equivalent performance to on-premises file storage for profile I/O with zero user experience change."
+    },
+    {
+      "id": "AZ305-MIG-036",
+      "domain": "Cost & Operations",
+      "question": "A company is performing a phased migration of 1,000 VMs from on-premises to Azure over 12 months. The on-premises data center lease expires in 14 months. The company wants to minimize total cost by decommissioning on-premises hardware as early as possible while ensuring the Azure environment is fully operational before decommissioning.\n\nWhich cost optimization and migration sequencing strategy achieves the earliest on-premises decommissioning?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Migrate VMs in waves of equal size (approximately 85 VMs/month), using Azure Migrate with auto-scaling to size Azure VM scales efficiently, then decommission equivalent on-premises capacity each month", "correct": false, "explanation": "Azure Migrate is a migration assessment and orchestration tool, not a capacity planning tool. Auto-scaling in Azure VMs applies to application-level scaling, not to IaaS VM fleet sizing."},
+        {"text": "Use Azure Migrate for assessment, perform right-sizing analysis using Azure Advisor recommendations after 30 days of Azure VM metrics, then migrate remaining workloads using Reserved Instances for 1-year commitments to lock in pricing, decommissioning on-premises hardware after wave 3", "correct": true, "explanation": "Azure Migrate assessment provides initial sizing. Azure Advisor right-sizing after 30 days of actual usage data ensures Azure VMs are correctly sized. Reserved Instances (1-year) lock in pricing for correctly-sized VMs, reducing run-rate cost. After wave 3 (month 3-4), on-premises decommissioning can begin, with full decommissioning by month 12."},
+        {"text": "Migrate all VMs to Azure Virtual Machines using Azure Site Recovery with the 'migrate and modernize' plan, committing to 3-year Azure Reserved Virtual Machine Instances for maximum discount, then decommission all on-premises hardware immediately", "correct": false, "explanation": "Committing to 3-year Reserved Instances before right-sizing means paying for over-provisioned capacity. Immediate full decommissioning without validating Azure operational stability is high-risk."},
+        {"text": "Use Azure Cost Management budgets with alerting to monitor migration costs, and use Azure Hybrid Benefit to reduce licensing costs, migrating as quickly as possible", "correct": false, "explanation": "Azure Cost Management budgets are monitoring tools, not optimization tools. 'Migrating as quickly as possible' without a validated wave plan increases migration risk."}
+      ],
+      "explanation": "The optimal approach: assess → right-size with real usage data → reserve → decommission. Azure Hybrid Benefit and Reserved Instances reduce ongoing Azure costs, while right-sizing ensures Reserved Instances are purchased for correctly-sized VMs."
+    },
+    {
+      "id": "AZ305-MIG-037",
+      "domain": "Cost & Operations",
+      "question": "A SaaS company is migrating from an on-premises data center with a 3-tier web application backed by a MySQL database (主从复制, 4TB) to Azure. The production MySQL has a primary-replica configuration with 1 primary and 2 read replicas. The application uses read replicas for reporting queries. They need to migrate with zero downtime and maintain the read replica routing.\n\nWhich Azure database migration maintains the replica topology during and after migration?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Migrate to Azure Database for MySQL with a replica configuration (1 primary, 2 read replicas) using the 'Create Read Replica' feature pointing to the on-premises primary, then switch the application connection string to Azure", "correct": true, "explanation": "Azure Database for MySQL supports read replica creation from an external (on-premises or IaaS) MySQL primary. This enables continuous replication from on-premises to Azure MySQL during migration. Once the Azure replicas are in sync, the application is updated to point to Azure MySQL."},
+        {"text": "Migrate to Azure Database for MySQL Flexible Server with zone-redundant HA, which automatically replaces the need for read replicas with built-in HA", "correct": false, "explanation": "Flexible Server HA provides automatic failover for high availability, not read replica routing. HA failover is a different capability from using read replicas for reporting query offloading."},
+        {"text": "Use Azure Database Migration Service with online mode to migrate the primary database, then manually configure the two read replicas after cutover", "correct": false, "explanation": "DMS online mode migrates the primary database but does not handle the replica configuration. The two on-premises read replicas would need to be re-pointed to the new Azure primary manually."},
+        {"text": "Deploy MySQL on Azure Virtual Machines with Availability Set, replicating the on-premises primary-replica topology exactly", "correct": false, "explanation": "MySQL on Azure VMs provides full control over replication topology but requires managing MySQL server software, OS patching, backups, and failover logic manually. Azure Database for MySQL PaaS handles these operational tasks."}
+      ],
+      "explanation": "Azure Database for MySQL read replica from external MySQL primary is designed exactly for this migration scenario. It maintains the replica chain during migration and automatically promotes replicas to primary at cutover."
+    },
+    {
+      "id": "AZ305-MIG-038",
+      "domain": "Cross-Platform & Mixed Workload",
+      "question": "A large enterprise is migrating from a hybrid on-premises/public cloud environment (AWS EC2 + on-premises vSphere) to Azure. They have 1,000 EC2 instances (Windows and Linux), 500 VMware VMs, and complex cross-cloud networking using AWS Direct Connect and on-premises MPLS.\n\nWhich migration and governance approach consolidates all three environments?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Migrate for all workloads, deploying the Azure Migrate appliance in AWS (for EC2 assessment) and in vSphere (for VM assessment), then migrate all workloads to Azure using Azure Site Recovery", "correct": false, "explanation": "Azure Migrate can assess VMware and Hyper-V workloads but not AWS EC2 instances. ASR does not support AWS EC2 as a migration source."},
+        {"text": "Use AWS Migration Hub Refactor Spaces to migrate AWS workloads to Azure, while using Azure Migrate for VMware workloads", "correct": false, "explanation": "AWS Migration Hub Refactor Spaces is for refactoring/migrating between AWS accounts or AWS services, not for cross-cloud migration to Azure."},
+        {"text": "For AWS EC2: use CloudEndure Migration (now part of AWS Application Migration Service) to migrate to Azure VMs. For VMware: use Azure Site Recovery. For cross-cloud networking: deploy Azure Virtual WAN with CloudConnect for AWS Direct Connect integration", "correct": true, "explanation": "CloudEndure/AWS Application Migration Service supports continuous replication from AWS EC2 to Azure VMs. Azure Site Recovery handles VMware-to-Azure migration. Azure Virtual WAN CloudConnect provides connectivity to AWS Direct Connect and on-premises MPLS through a unified SD-WAN hub."},
+        {"text": "Re-architect all workloads as containers and deploy to Azure Kubernetes Service, using Azure Arc for unified management across the remaining AWS and on-premises environments", "correct": false, "explanation": "Re-architecting 1,500 workloads as containers in a migration context is not realistic. Azure Arc manages hybrid Azure resources but cannot migrate AWS EC2 instances to AKS."}
+      ],
+      "explanation": "A multi-source migration requires purpose-built tools per source: CloudEndure for AWS EC2, ASR for VMware, Virtual WAN CloudConnect for unified network consolidation."
+    },
+    {
+      "id": "AZ305-MIG-039",
+      "domain": "Cross-Platform & Mixed Workload",
+      "question": "A fintech company is migrating from Google Cloud Platform (GCP) to Azure. They have 300 GKE (Google Kubernetes Engine) pods running microservices with Istio service mesh. The microservices use gRPC for inter-service communication.\n\nWhich Azure service mapping preserves the gRPC inter-service communication?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Migrate GKE pods to Azure Kubernetes Service with Istio installed, and configure gRPC to use Istio's built-in xDS API for service discovery", "correct": true, "explanation": "AKS supports Istio natively, and Istio's xDS API (used by Envoy proxies) provides service discovery for gRPC services. gRPC uses HTTP/2 and the xDS protocol for load balancing and service discovery. Istio on AKS provides the same xDS API as Istio on GKE, enabling transparent gRPC communication without code changes."},
+        {"text": "Migrate GKE pods to Azure Container Instances with Azure Service Fabric mesh for gRPC routing", "correct": false, "explanation": "Azure Container Instances does not support multi-container pod orchestration with service mesh. Service Fabric Mesh is a separate serverless containers platform, not a direct AKS equivalent."},
+        {"text": "Migrate gRPC microservices to Azure Functions with gRPC triggers, replacing the Kubernetes service mesh with Azure API Management for routing", "correct": false, "explanation": "Azure Functions does not natively support gRPC triggers. Azure Functions uses an in-process runtime that cannot host arbitrary gRPC servers."},
+        {"text": "Use Azure Arc for Kubernetes to manage the GKE cluster from Azure, avoiding migration of the cluster itself", "correct": false, "explanation": "Azure Arc for Kubernetes allows Azure management of Kubernetes clusters anywhere, but it does not migrate workloads. The GKE cluster remains in GCP."}
+      ],
+      "explanation": "Istio is the common service mesh layer across GKE and AKS. The xDS API for gRPC service discovery is compatible between Istio on GKE and Istio on AKS. gRPC applications can migrate with the same service mesh configuration and zero code changes."
+    },
+    {
+      "id": "AZ305-MIG-040",
+      "domain": "Cross-Platform & Mixed Workload",
+      "question": "An enterprise is migrating from an on-premises Zookeeper/Kafka cluster (50 brokers, 500 topics, 10 million messages/second) to Azure Event Hubs. They use Kafka API for producer/consumer applications. The migration must happen with no application code changes.\n\nWhich Event Hubs tier and configuration supports the 10M messages/second throughput?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Deploy Azure Event Hubs Standard tier with 20 throughput units, partitioning the 500 topics across Event Hubs namespaces", "correct": false, "explanation": "Event Hubs Standard has a limit of 1 MB/s ingress per TU. At 10 million messages/second (assuming average 1KB per message = ~10 GB/s ingress), this far exceeds Standard tier capacity even with maximum TU (40 TUs = 40 MB/s)."},
+        {"text": "Deploy Azure Event Hubs Dedicated tier with 100 capacity units (CU), providing up to 2 GB/s ingress and 4 GB/s egress, using Kafka Connect to bridge the on-premises Kafka cluster to Event Hubs", "correct": false, "explanation": "Event Hubs Dedicated provides massive throughput. However, Kafka Connect is used to migrate between two Kafka clusters, not to replace Kafka with Event Hubs. The correct approach is to use the Kafka protocol support in Event Hubs directly."},
+        {"text": "Deploy Azure Event Hubs Dedicated tier with 100 capacity units, and configure producer/consumer applications to use Event Hubs' Kafka-compatible endpoint (bootstrap server URL: <namespace>.servicebus.windows.net:9093)", "correct": true, "explanation": "Event Hubs provides a Kafka-compatible endpoint on port 9093. Producer/consumer applications configured for Kafka can point to Event Hubs' Kafka endpoint without any code changes (just a bootstrap server URL update). Dedicated tier with 100 CUs provides the 2 GB/s ingress needed for 10M messages/second."},
+        {"text": "Use Apache Kafka on Azure HDInsight (Kafka cluster) to maintain the same Kafka architecture without migrating to Event Hubs", "correct": false, "explanation": "HDInsight Kafka is a managed Kafka service, not Event Hubs. While this preserves the Kafka API, it does not achieve the migration goal to Event Hubs."}
+      ],
+      "explanation": "Event Hubs Dedicated with Kafka protocol compatibility is the direct replacement for on-premises Kafka at scale. The Kafka endpoint (9093) accepts Kafka protocol clients without code changes."
+    },
+    {
+      "id": "AZ305-MIG-041",
+      "domain": "Cross-Platform & Mixed Workload",
+      "question": "A retail company is migrating from on-premises Cloudflare for DNS and CDN to Azure. They have 50 domain names, a globally distributed CDN with 100 edge locations, and DDoS protection via Cloudflare's L3/L4/L7 protection. The company uses Cloudflare Workers (serverless edge functions) for A/B testing and personalization.\n\nWhich Azure service combination replaces the full Cloudflare stack?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure DNS for authoritative DNS, Azure Front Door for CDN and L7 DDoS protection, Azure DDoS Protection Standard for L3/L4 protection, and Azure Functions with Azure CDN for edge compute replacement of Cloudflare Workers", "correct": true, "explanation": "Azure DNS replaces Cloudflare DNS. Azure Front Door provides CDN + WAF + L7 DDoS protection at global scale. Azure DDoS Protection Standard provides L3/L4 DDoS protection. Azure Functions with geolocation routing can replace Cloudflare Workers for A/B testing and personalization (routing based on headers/cookies). Azure Front Door's rules engine provides URL rewriting and redirect capabilities equivalent to Cloudflare Workers routing logic."},
+        {"text": "Use Azure DNS for DNS, Azure CDN Premium from Edgio for CDN, and Azure Web Application Firewall for DDoS protection, replacing Cloudflare Workers with Azure Functions at the CDN edge", "correct": false, "explanation": "Azure CDN Premium from Edgio does support edge compute via the Rules Engine, but it is a legacy CDN product. Azure Front Door is the modern replacement for global CDN + security. Azure Functions cannot be deployed at CDN edge locations in the same way Cloudflare Workers runs on Cloudflare's edge."},
+        {"text": "Use Azure Traffic Manager for DNS routing, Azure CDN Standard for Microsoft for static content, and Azure Application Gateway for dynamic content", "correct": false, "explanation": "Traffic Manager is a DNS-based load balancer, not a CDN. Azure CDN Standard Microsoft is not a true CDN with global edge POPs. Application Gateway is a regional ADC, not a global CDN."},
+        {"text": "Deploy Cloudflare in 'Reverse Proxy' mode through Azure, maintaining Cloudflare as the CDN and security layer while using Azure for backend hosting", "correct": false, "explanation": "This approach does not migrate away from Cloudflare. The question asks for migration FROM Cloudflare to Azure."}
+      ],
+      "explanation": "Azure Front Door + Azure DNS + Azure DDoS Protection + Azure Functions (via Front Door rules engine) provides the full Cloudflare stack replacement: global CDN, DNS, L3-L7 DDoS protection, and edge compute."
+    },
+    {
+      "id": "AZ305-MIG-042",
+      "domain": "Cutover & Post-Migration Validation",
+      "question": "A healthcare company is performing a cutover migration of their electronic health record (EHR) system from on-premises to Azure. The system consists of 8 VMs: 2 web servers, 2 application servers, 2 database servers (SQL Server Always On AG), and 2 file servers. The cutover window is 4 hours. They need to validate that the Azure deployment meets the same SLA as the on-premises deployment (99.95% availability).\n\nWhich cutover and validation approach should they follow?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Perform a blue/green deployment with Azure ASR, deploying the green environment in Azure, running a parallel validation for 24 hours, then switching DNS to Azure with immediate on-premises decommissioning", "correct": false, "explanation": "A 24-hour parallel validation exceeds the 4-hour cutover window. ASR blue/green is designed for DR scenarios with longer validation periods, not for a planned migration cutover with a strict time window."},
+        {"text": "Use Azure Site Recovery with a planned failover during the 4-hour window, validate the Azure deployment using Azure Monitor Application Insights synthetic transactions, then re-point the load balancer to Azure if all tests pass", "correct": true, "explanation": "ASR planned failover ensures all VMs failover in a coordinated sequence, preserving the Always On AG configuration. Application Insights availability tests (synthetic transactions) can be pre-configured to run against the Azure deployment during the validation phase. The load balancer switch completes the cutover atomically."},
+        {"text": "Use Azure Migrate to perform a physical cutover, manually start each VM in Azure, run SQL Server Always On AG validation scripts, then update the application connection strings", "correct": false, "explanation": "Azure Migrate does not perform cutover. It is an assessment and replication orchestration tool. Manual VM startup and AG validation scripts do not constitute a coordinated cutover process."},
+        {"text": "Deploy Azure Landing Zone with all VMs pre-provisioned, use Azure Bastion for remote access during validation, run SQL Server DBCC CHECKDB for data integrity, then perform a DNS cutover with a 5-minute TTL", "correct": false, "explanation": "Pre-provisioning VMs without ASR replication means no incremental data sync - the last sync point could be hours/days old. 5-minute TTL does not account for client-side DNS caching."}
+      ],
+      "explanation": "ASR planned failover ensures coordinated VM failover, preserving Always On AG. Application Insights synthetic transactions validate the application stack end-to-end. The load balancer switch completes the cutover atomically within the 4-hour window."
+    },
+    {
+      "id": "AZ305-MIG-043",
+      "domain": "Cutover & Post-Migration Validation",
+      "question": "After completing a large-scale migration to Azure, the security team needs to validate that all Azure resources comply with the company's security baseline. The baseline includes: all storage accounts must use HTTPS, no public IP addresses on VMs, all SQL databases must have Defender for Cloud enabled, and all secrets must be in Key Vault.\n\nWhich Azure governance tool provides the MOST efficient automated compliance validation?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Security Center (Microsoft Defender for Cloud) with the 'Regulatory Compliance' dashboard configured with the company security baseline as a custom compliance package, enabling continuous assessment", "correct": true, "explanation": "Microsoft Defender for Cloud with the Regulatory Compliance dashboard provides continuous assessment against compliance frameworks. The company can import their security baseline as a custom initiative (JSON policy set) and Defender for Cloud will continuously assess all subscriptions against it, providing a compliance score and specific resource-level non-compliance alerts."},
+        {"text": "Use Azure Policy with audit effect for each security requirement, and run Get-AzPolicyCompliance PowerShell commands manually on a weekly schedule", "correct": false, "explanation": "Azure Policy with audit effect provides compliance state, but manual PowerShell execution on a weekly schedule is not continuous assessment. Defender for Cloud provides the same policy evaluation but with continuous monitoring, alerting, and integration with security workflows."},
+        {"text": "Use Azure Advisor to identify security recommendations and export them to a CSV for the security team to review", "correct": false, "explanation": "Azure Advisor provides best-practice recommendations, not a formal compliance validation framework. It does not evaluate against a custom security baseline."},
+        {"text": "Use Azure Sentinel to query security events and generate a weekly compliance report using KQL queries", "correct": false, "explanation": "Azure Sentinel is a SIEM for security event monitoring, not a compliance assessment tool. KQL queries against SecurityEvent table only covers Windows security events, not Azure resource configuration compliance."}
+      ],
+      "explanation": "Microsoft Defender for Cloud's continuous compliance assessment against custom security initiatives is the most efficient post-migration validation approach. It automatically discovers all resources across subscriptions and evaluates them against the custom baseline."
+    },
+    {
+      "id": "AZ305-MIG-044",
+      "domain": "Cutover & Post-Migration Validation",
+      "question": "A company has completed the data migration phase of an Oracle-to-Azure SQL Managed Instance project. The data migration used Oracle Data Guard for continuous replication during the migration window. The final cutover is planned for next weekend. The team wants to validate data integrity before cutover.\n\nWhich validation approach should they use?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Oracle DBMS_COMPARISON package to compare tables between Oracle and Azure SQL Managed Instance", "correct": false, "explanation": "DBMS_COMPARISON is an Oracle-specific package that cannot compare across different database engines (Oracle vs Azure SQL). It only compares two Oracle databases."},
+        {"text": "Use Azure Data Factory with a data flow that performs row-count validation and checksum comparison (MD5/SHA) between Oracle source and Azure SQL Managed Instance target, generating a validation report", "correct": true, "explanation": "ADF Data Flows can connect to both Oracle (via integration runtime) and Azure SQL MI (via managed identity), performing row-count and column-level checksum comparisons. MD5 or SHA256 hashes computed in Data Flow expressions enable byte-level data integrity validation across heterogeneous databases."},
+        {"text": "Use Oracle GoldenGate's Integrated Extract to pull data from Oracle and use the Integrated Replicat to apply to Azure SQL Managed Instance", "correct": false, "explanation": "GoldenGate Integrated Replicat cannot apply to Azure SQL Managed Instance. Azure SQL Managed Instance is not a supported GoldenGate target."},
+        {"text": "Export Oracle data to CSV files, upload to Azure Blob Storage, then use Azure SQL Migration extension for VS Code to validate the CSV data against the Azure SQL Managed Instance data", "correct": false, "explanation": "CSV export/import introduces manual steps and data freshness issues. The Azure SQL Migration extension is a migration assessment tool, not a cross-database data validation tool."}
+      ],
+      "explanation": "ADF Data Flow with hash-based comparison is the recommended approach for cross-engine data validation. The checksum approach (MD5/SHA256 of key columns) validates byte-level data integrity across Oracle and Azure SQL MI."
+    },
+    {
+      "id": "AZ305-MIG-045",
+      "domain": "Cutover & Post-Migration Validation",
+      "question": "A global logistics company has completed a migration of 200 microservices from on-premises Kubernetes to Azure Kubernetes Service (AKS). The microservices use Helm 3 for packaging and deployment. The team wants to establish a GitOps-based CI/CD pipeline in Azure that validates and deploys to AKS with minimal manual intervention.\n\nWhich Azure-native GitOps CI/CD approach should they implement?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure DevOps Pipelines with Helm deploy tasks, triggering on git commits to the repository, deploying directly to AKS using the Kubernetes service connection", "correct": false, "explanation": "Azure DevOps Pipelines with direct kubectl/Helm deployment is a traditional CI/CD approach, not GitOps. GitOps requires that the cluster state is always derived from git, not from a pipeline."},
+        {"text": "Use Azure Arc for Kubernetes with Azure Policy to enforce cluster configuration from git, combined with Azure DevOps for application CI builds that push images to Azure Container Registry", "correct": true, "explanation": "Azure Arc for Kubernetes enables GitOps through Azure Policy-based cluster configuration management. Flux or GitOps operator is deployed on the AKS cluster via Arc, pulling Kubernetes manifests from the git repository. Azure DevOps handles application CI (build/push images to ACR), while Arc+Flux handles deployment CD (pull from git + apply to cluster). This is the Azure-native GitOps pattern."},
+        {"text": "Use Azure Kubernetes Service with Azure Policy add-on (built-in) for GitOps, where the cluster automatically syncs from an Azure Container Registry config repository", "correct": false, "explanation": "AKS Azure Policy add-on evaluates resource requests against cluster-level policies but does not provide GitOps functionality. GitOps in AKS is provided by Azure Arc for Kubernetes, not by the AKS Policy add-on."},
+        {"text": "Deploy Jenkins on AKS for CI/CD, using the Jenkins Kubernetes plugin to deploy Helm charts from a git repository to AKS", "correct": false, "explanation": "Running Jenkins on AKS is a valid approach but not Azure-native. Jenkins on AKS still implements pipeline-based deployment, not GitOps."}
+      ],
+      "explanation": "Azure Arc for Kubernetes + Azure DevOps + ACR is the Azure-native GitOps stack: DevOps for CI (build/push images), Arc + Flux for CD (git-ops deployment to AKS). This separates concerns between application CI and cluster deployment CD while maintaining git as the source of truth."
+    },
+    {
+      "id": "AZ305-MIG-046",
+      "domain": "Cutover & Post-Migration Validation",
+      "question": "A company has migrated their entire on-premises SharePoint Server 2019 farm (3 servers: 2 WFE, 1 App) to SharePoint Online in Microsoft 365. They have 15 custom SharePoint solutions (farm solutions .wsp files) and 10 SharePoint Designer workflows. After migration, users report that the custom solutions and workflows are not functioning.\n\nWhich post-migration remediation approach restores functionality with the LEAST effort?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Re-deploy all 15 .wsp farm solutions to SharePoint Online using the SharePoint Management Shell", "correct": false, "explanation": "SharePoint Online does not support farm solutions (.wsp files). Farm solutions are a SharePoint Server-specific deployment mechanism that requires farm-level trust and server-side execution."},
+        {"text": "Re-implement all 15 .wsp farm solutions as SharePoint Framework (SPFx) web parts and convert all SharePoint Designer workflows to Power Automate flows", "correct": false, "explanation": "Re-implementing 15 farm solutions as SPFx and converting 10 workflows to Power Automate is a re-development effort, not a migration remediation. This is a significant effort that can take months."},
+        {"text": "Implement a hybrid SharePoint environment: configure SharePoint Server on Azure VMs for farm solutions and SharePoint Designer workflows, connected to SharePoint Online via Hybrid Workload", "correct": true, "explanation": "SharePoint Server on Azure VMs supports farm solutions and SharePoint Designer workflows. Azure VMs with SharePoint Server 2019 can be configured as a Hybrid environment with SharePoint Online using OAuth/SAML federation. Hybrid Workloads enable a gradual transition: custom solutions stay on Azure VMs, SharePoint Online handles modern workloads. This preserves functionality while providing a path to full modernization."},
+        {"text": "Use the SharePoint Migration Tool (SPMT) with the '-HybridFarm' flag to re-migrate the farm solutions to SharePoint Online with compatibility layer enabled", "correct": false, "explanation": "SPMT does not have a '-HybridFarm' flag. SPMT cannot migrate farm solutions - those are server-side code, not content."}
+      ],
+      "explanation": "SharePoint Online cannot run farm solutions (.wsp) or SharePoint Designer workflows. The only supported path is: (1) keep them on SharePoint Server 2019 on Azure VMs in a hybrid configuration, or (2) re-develop as SPFx/Power Automate. Hybrid is the least-effort path that restores functionality immediately."
+    },
+    {
+      "id": "AZ305-MIG-047",
+      "domain": "Migration Strategy & Planning",
+      "question": "A large healthcare organization is migrating from a legacy on-premises Epic EHR system to Azure. The Epic system uses a relational database (Cache), HL7 FHIR APIs for integrations, and runs on a 3-tier architecture. The migration must maintain HIPAA compliance and support 99.99% availability. The cutover window is limited to 4 hours.\n\nWhich migration approach is the only realistic path that preserves HIPAA compliance and the 4-hour cutover?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Virtual Machines with the same 3-tier architecture, migrating the Cache database using the Epic-provided migration toolkit, and re-implementing FHIR APIs as Azure API Management frontends", "correct": false, "explanation": "Epic does not provide a migration toolkit for Azure. Epic systems are highly customized and require Epic's own implementation team for any migration. Azure VMs with Epic are not a supported configuration."},
+        {"text": "Use Azure API Management to front the existing on-premises Epic system as a hybrid solution, gradually migrating integration endpoints to Azure PaaS while maintaining the on-premises Epic database", "correct": false, "explanation": "This is a hybrid approach that does not migrate the EHR system to Azure. Epic on-premises remains the system of record. This is an integration architecture, not a migration."},
+        {"text": "Migrate to Epic on Azure through Epic's own Cloud Platform program, where Epic hosts and manages the Epic environment in their own Azure subscription under a BAA, and the customer migrates to Epic's cloud-hosted solution", "correct": true, "explanation": "Epic offers a Cloud Platform program where Epic hosts Epic systems in Azure under Epic's own Azure subscription. This is the ONLY supported path for moving Epic to Azure. Epic does not allow customers to self-host Epic in their own Azure subscription. The customer migrates data to Epic's cloud-hosted environment using Epic's data migration tools, with Epic managing the Azure infrastructure under their BAA."},
+        {"text": "Re-host the Epic EHR on Azure Virtual Machines using Epic's supported virtualization platform, implementing Azure Site Recovery for the cutover", "correct": false, "explanation": "Epic does not certify Azure VMs as a deployment platform for production Epic EHR systems. Epic only certifies specific on-premises and some cloud environments (Epic on Azure is available but only through Epic's own cloud hosting agreements, not through customer-managed Azure subscriptions)."}
+      ],
+      "explanation": "Epic cannot be migrated to Azure by the customer. Epic's Cloud Platform program is the ONLY supported path - Epic hosts the system in their own Azure subscription with their own BAA. This is fundamentally different from typical application migrations."
+    },
+    {
+      "id": "AZ305-MIG-048",
+      "domain": "Infrastructure & Compute Migration",
+      "question": "An enterprise is migrating 2,000 on-premises Red Hat Enterprise Linux 7 VMs to Azure. Due to Red Hat's subscription model, they want to minimize new Red Hat subscriptions by using Azure's Red Hat Gold Image. They currently have 1,500 active Red Hat subscriptions and 500 expired subscriptions.\n\nWhich Azure licensing approach should they recommend?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Red Hat Gold Images for all 2,000 VMs, which include Red Hat Enterprise Linux licenses bundled with Azure infrastructure costs, eliminating the need to manage subscriptions", "correct": true, "explanation": "Azure Red Hat Gold Images include Red Hat Enterprise Linux licenses billed through Azure. Azure provides Red Hat Gold Images that bundle RHEL with the VM cost, eliminating the need for separate Red Hat subscriptions. For 500 expired subscriptions, this is the most cost-effective approach. For the 1,500 active subscriptions, Azure Hybrid Benefit can be used to bring those licenses to Azure, reducing Azure costs by using existing subscriptions."},
+        {"text": "Use Azure Red Hat Gold Images for the 500 expired subscription VMs, and use Red Hat Cloud Access to transfer the 1,500 existing subscriptions to Azure for the remaining VMs", "correct": false, "explanation": "Red Hat Cloud Access allows transferring existing Red Hat subscriptions to Azure, but it requires the customer to maintain the subscriptions in Red Hat's subscription management system. Azure Red Hat Gold Images are simpler and the cost is bundled."},
+        {"text": "Use Azure Red Hat Gold Images for all VMs and purchase new Red Hat subscriptions for all 2,000 VMs", "correct": false, "explanation": "Azure Red Hat Gold Images include RHEL licenses - purchasing additional subscriptions would be double-licensing and unnecessary."},
+        {"text": "Use Azure Red Hat Gold Images with Red Hat Identity Management integration for centralized subscription tracking", "correct": false, "explanation": "Red Hat Identity Management is for Linux identity management (SSSD, LDAP, Kerberos), not for subscription tracking."}
+      ],
+      "explanation": "Azure Red Hat Gold Images bundle RHEL licensing with Azure VM costs. For the 1,500 active subscriptions, Azure Hybrid Benefit can offset costs. For the 500 expired subscriptions, Azure Red Hat Gold Images provide compliant RHEL without needing to renew expired subscriptions."
+    },
+    {
+      "id": "AZ305-MIG-049",
+      "domain": "Data Migration",
+      "question": "A media company is migrating 500 TB of video assets from on-premises HDFS to Azure. They currently use Apache Spark with Delta Lake for data processing. The Spark jobs read and write Parquet files to HDFS. After migration to ADLS Gen2, they want to continue using Delta Lake.\n\nWhich configuration change allows Delta Lake to work with ADLS Gen2 without modifying Spark job code?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Configure Spark to use the Azure Blob File System (ABFS) driver by setting spark.hadoop.fs.defaultFS to abfs://<container>@<storage>.dfs.core.windows.net/", "correct": true, "explanation": "Delta Lake on Azure uses the ABFS (Azure Blob File System) driver, which is the Azure-native Hadoop-compatible filesystem driver for ADLS Gen2. Setting spark.hadoop.fs.defaultFS to the abfs:// endpoint allows Spark jobs to read/write Delta Lake tables on ADLS Gen2 without any code changes. Delta Lake automatically stores transaction logs and table data as Parquet files in the specified path."},
+        {"text": "Configure Spark to use wasb:// (Windows Azure Storage Blob) driver to maintain compatibility with the on-premises HDFS configuration", "correct": false, "explanation": "wasb:// is the legacy Azure Blob Storage driver for Hadoop, not ADLS Gen2. wasb:// does not support the hierarchical namespace required for Delta Lake transaction log semantics."},
+        {"text": "Mount ADLS Gen2 as an HDFS filesystem using Azure Data Lake Store connector for Spark, maintaining the hdfs:// protocol in Spark job code", "correct": false, "explanation": "ADLS Gen2 cannot be mounted as HDFS. The HDFS connector for ADLS Gen2 is the ABFS driver itself, not a separate mount."},
+        {"text": "Replace Delta Lake with Apache Iceberg on ADLS Gen2, as Iceberg has better ADLS Gen2 compatibility", "correct": false, "explanation": "Delta Lake fully supports ADLS Gen2 via the ABFS driver. Replacing Delta Lake with Iceberg is a re-engineering decision, not a configuration change."}
+      ],
+      "explanation": "Delta Lake on Azure uses ABFS (Azure Blob File System) driver, which is the Hadoop-compatible filesystem driver for ADLS Gen2. Setting the Spark defaultFS to abfs:// enables Delta Lake to work on ADLS Gen2 without code changes."
+    },
+    {
+      "id": "AZ305-MIG-050",
+      "domain": "Cross-Platform & Mixed Workload",
+      "question": "A global manufacturing company is consolidating IT environments from 3 recent acquisitions into Azure. Each acquired company ran a mix of workloads: Company A ran exclusively on AWS (EC2, RDS, S3), Company B ran on Google Cloud (GKE, Cloud SQL, Cloud Storage), and Company C ran on-premises VMware. The consolidation must be completed within 6 months.\n\nWhich Azure service combination is the ONLY approach that can migrate all three environments in the 6-month timeframe?",
+      "shuffleChoices": true,
+      "choices": [
+        {"text": "Use Azure Migrate for all three environments: assess VMware for Company C, assess AWS EC2 for Company A using the Azure Migrate appliance, and assess GKE for Company B using Azure Arc", "correct": false, "explanation": "Azure Migrate does not support AWS EC2 assessment. Azure Arc does not assess GKE clusters. There is no single Azure tool that can assess all three environments."},
+        {"text": "For Company A (AWS): use CloudEndure Migration. For Company B (GCP): use Google Migrate for Anthos. For Company C (VMware): use Azure Site Recovery. Parallel workstreams across all three teams enable 6-month completion", "correct": true, "explanation": "Each cloud environment requires its own native migration tool: CloudEndure/AWS Application Migration Service for AWS EC2 (the standard AWS-to-Azure migration tool), Google Migrate for Anthos or GKE migration tools for GCP GKE (Google provides migration tooling for GKE to GKE on Azure via GKE on Azure or container migration paths), and Azure Site Recovery for VMware. Parallel workstreams across the three acquisitions with dedicated teams for each environment can achieve the 6-month timeline."},
+        {"text": "Containerize all workloads from all three companies and deploy to Azure Kubernetes Service as the unified platform, using Azure Arc for hybrid management across all environments during migration", "correct": false, "explanation": "Containerizing all workloads from three different cloud environments (AWS EC2, GCP GKE, VMware) within 6 months is a re-engineering effort, not a migration. This approach would not complete within 6 months."},
+        {"text": "Use Azure Data Factory to extract data from all three source environments, transform in Azure, and land in Azure data services, replacing all source applications with Azure-native alternatives", "correct": false, "explanation": "ADF is a data integration tool, not an application migration tool. It cannot migrate running applications from AWS EC2, GCP GKE, or VMware. This approach would require re-building all applications from scratch."}
+      ],
+      "explanation": "Multi-cloud/multi-platform migrations require purpose-built tools per source environment. CloudEndure for AWS, GCP migration tooling for GKE, and ASR for VMware are the only realistic tools for each environment. No single Azure tool covers all three."
+    }
+  ]
+}
