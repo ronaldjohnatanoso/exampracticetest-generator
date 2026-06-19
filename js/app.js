@@ -44,9 +44,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ── Manifest / Dropdown ─────────────────────────
 // Known question bank files — add new banks here
 const KNOWN_BANKS = [
-  { id: 'az305', file: 'data/questions-az305.json' },
-  { id: 'az104', file: 'data/questions-az104.json' },
-  { id: 'ai103', file: 'data/questions-ai103.json' },
+  { id: 'az305',  file: 'data/questions-az305.json' },
+  { id: 'az305v2', file: 'data/questions-az305-v2.json' },
+  { id: 'az104',  file: 'data/questions-az104.json' },
+  { id: 'ai103',  file: 'data/questions-ai103.json' },
 ];
 
 async function loadManifest() {
