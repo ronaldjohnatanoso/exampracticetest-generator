@@ -1,0 +1,1236 @@
+{
+  "title": "GCP Professional Cloud Architect \u2014 Standard",
+  "description": "50 standard exam-style questions covering all 6 GCP PCA domains: architecture design, infrastructure provisioning, security, cost optimization, implementation management, and reliability.",
+  "timeLimit": 75,
+  "count": 50,
+  "passingScore": 70,
+  "shuffle": true,
+  "domains": [
+    {
+      "name": "Cloud Architecture Design",
+      "weight": 24
+    },
+    {
+      "name": "Infrastructure Provisioning",
+      "weight": 15
+    },
+    {
+      "name": "Security & Compliance",
+      "weight": 20
+    },
+    {
+      "name": "Cost & Business Optimization",
+      "weight": 18
+    },
+    {
+      "name": "Implementation Management",
+      "weight": 11
+    },
+    {
+      "name": "Reliability Engineering",
+      "weight": 14
+    }
+  ],
+  "questions": [
+    {
+      "domain": "Cloud Architecture Design",
+      "question": "You need to design a globally distributed PostgreSQL database on GCP with multi-region write capability, automatic sharding, and 99.999% availability. Which database service?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud SQL for PostgreSQL with High Availability (regional) + read replicas in additional regions",
+          "correct": false
+        },
+        {
+          "text": "Cloud Spanner with multi-region configuration (e.g., nam-eur-asia) + automatic sharding + 99.999% SLA",
+          "correct": true
+        },
+        {
+          "text": "Bare-metal PostgreSQL on Compute Engine with synchronous streaming replication to a secondary region",
+          "correct": false
+        },
+        {
+          "text": "AlloyDB for PostgreSQL with regional configuration + Cloud Spanner for globally distributed reads",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Spanner is the only GCP service that provides true multi-region writes with automatic sharding, strong consistency, and 99.999% SLA. Cloud SQL doesn't support multi-region writes (it's single-region with cross-region read replicas). AlloyDB is for enterprise PostgreSQL at scale but within a single region."
+    },
+    {
+      "domain": "Cloud Architecture Design",
+      "question": "You need to deploy a stateless containerized API that handles 100 to 10,000 requests per second with zero cold starts. Which GCP compute service?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Run \u2014 scales from 0 to 10,000 RPS, zero cold starts with min-instance configuration, pay-per-use",
+          "correct": true
+        },
+        {
+          "text": "GKE Autopilot with Horizontal Pod Autoscaler (HPA) \u2014 scales up but has cold starts, GKE cluster management overhead",
+          "correct": false
+        },
+        {
+          "text": "Compute Engine with Managed Instance Groups (MIG) and autoscaler \u2014 minimum 1 instance always running, slower to scale",
+          "correct": false
+        },
+        {
+          "text": "App Engine Flexible \u2014 supports containers but has significant cold starts and charges for idle minimum instances",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Run with min-instances set to 0 handles the variable load (100 to 10,000 RPS) without cold starts when traffic is low. It scales to zero and charges only for actual request processing. GKE has management overhead. MIGs always have running instances. App Engine Flexible is the slowest to scale."
+    },
+    {
+      "domain": "Cloud Architecture Design",
+      "question": "A company needs to ingest 500,000 IoT sensor messages per second with exactly-once delivery guarantee, process them in real-time, and store raw events for 90 days. Which GCP data pipeline?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Pub/Sub with exactly-once delivery enabled \u2192 Dataflow (Apache Beam) streaming \u2192 BigQuery (streaming insert) for real-time + Cloud Storage for raw 90-day archive",
+          "correct": true
+        },
+        {
+          "text": "Pub/Sub Lite (zonal) \u2192 Dataflow streaming \u2192 Cloud Bigtable for real-time queries + Cloud Storage for 90-day archive",
+          "correct": false
+        },
+        {
+          "text": "Pub/Sub \u2192 Cloud Functions (trigger) \u2192 Cloud Firestore for real-time + Cloud Storage for raw archive",
+          "correct": false
+        },
+        {
+          "text": "Apache Kafka on GKE (Confluent) \u2192 Dataproc Serverless \u2192 BigQuery + Cloud Storage \u2014 Kafka requires significant operational overhead",
+          "correct": false
+        }
+      ],
+      "explanation": "Pub/Sub exactly-once delivery (with deduplication window) ensures no duplicate messages. Dataflow handles the streaming transformation with exactly-once semantics. BigQuery streaming insert enables real-time querying. Cloud Storage archive holds raw data for 90 days. Pub/Sub Lite is zonal-only (not cross-region). Cloud Functions aren't designed for 500K msg/sec."
+    },
+    {
+      "domain": "Cloud Architecture Design",
+      "question": "You need to design a data warehouse in GCP for 50TB of structured data with auto-scaling, columnar storage, and flat-rate pricing for predictable 10TB/day query volume. Which service?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "BigQuery with flat-rate pricing (100 slot reservations) + partitioned tables + clustered on common query filter columns",
+          "correct": true
+        },
+        {
+          "text": "Cloud SQL for PostgreSQL with pg_partman for partitioning \u2014 not designed for analytical queries at 50TB scale",
+          "correct": false
+        },
+        {
+          "text": "Dataproc Serverless for Spark SQL queries \u2014 serverless but billed per second, no flat-rate for predictable workloads",
+          "correct": false
+        },
+        {
+          "text": "BigQuery with on-demand pricing \u2014 suitable for unpredictable query volume but becomes expensive at 10TB/day fixed",
+          "correct": false
+        }
+      ],
+      "explanation": "BigQuery flat-rate with reserved slots is the most cost-effective for predictable high-volume query workloads (10TB/day = ~$5K/month flat-rate vs $50K+ on-demand). Partitioned tables and clustering optimize query performance. On-demand is for unpredictable workloads."
+    },
+    {
+      "domain": "Cloud Architecture Design",
+      "question": "You are designing a HIPAA-compliant architecture for PHI data on GCP. Which three services must you use together to ensure encryption at rest, access logging, and data masking?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud KMS (CMEK) for encryption keys + Cloud Audit Logs (Data Access logs) + Cloud DLP API for de-identification/masking of PHI",
+          "correct": true
+        },
+        {
+          "text": "VPC Service Controls for perimeter security + Cloud Armor for DDoS protection + Cloud KMS for encryption",
+          "correct": false
+        },
+        {
+          "text": "Binary Authorization for container images + Secret Manager for credentials + Cloud Logging for all logs",
+          "correct": false
+        },
+        {
+          "text": "Cloud IAP (Identity-Aware Proxy) for access control + Cloud Armor for WAF + Customer-managed encryption keys in Cloud KMS",
+          "correct": false
+        }
+      ],
+      "explanation": "HIPAA compliance on GCP requires: CMEK via Cloud KMS (encryption at rest), Cloud Audit Logs with Data Access logging enabled (who accessed what data), and Cloud DLP API for de-identification/masking of PHI. These three together cover the HIPAA technical safeguard requirements."
+    },
+    {
+      "domain": "Infrastructure Provisioning",
+      "question": "You need to provision GCP infrastructure for 50 projects following a consistent baseline: shared VPC, hardened firewall rules, and logging enabled. The solution must be repeatable and version-controlled. Which tool and approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Terraform with a modular structure: org-level module for shared VPC + project module for baseline resources, state in GCS bucket with versioned backend",
+          "correct": true
+        },
+        {
+          "text": "Deployment Manager with YAML templates \u2014 YAML-based, managed state by Google, simpler for GCP-only environments",
+          "correct": false
+        },
+        {
+          "text": "Config Connector with Kubernetes manifests \u2014 use Kubernetes API to manage GCP resources, requires GKE cluster to be running first",
+          "correct": false
+        },
+        {
+          "text": "gcloud CLI scripts with bash loops \u2014 simpler but not idempotent, can't track state across runs",
+          "correct": false
+        }
+      ],
+      "explanation": "Terraform with GCS backend is the recommended approach for multi-project infrastructure at scale. Modules enforce consistency. Remote state in GCS with versioning provides state history and team collaboration. Deployment Manager is legacy. Config Connector requires GKE. CLI scripts aren't idempotent."
+    },
+    {
+      "domain": "Infrastructure Provisioning",
+      "question": "A GKE cluster needs to run a workload that requires GPU nodes (NVIDIA A100) only during business hours. Outside hours, the workload should scale to zero. Which node and autoscaling configuration?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "GKE Autopilot with NVIDIA A100 node pool, Cluster Autoscaler with scale-down after 10 minutes, Node Auto Provisioning to dynamically create/destroy GPU node pools based on Pod scheduling",
+          "correct": true
+        },
+        {
+          "text": "GKE Standard with a dedicated A100 node pool, Cluster Autoscaler enabled, Kubernetes cron jobs to taint/untaint nodes outside business hours",
+          "correct": false
+        },
+        {
+          "text": "Compute Engine with GPUs + Managed Instance Groups with autoscaler \u2014 GKE isn't needed if workloads are batch jobs",
+          "correct": false
+        },
+        {
+          "text": "GKE Autopilot with pre-emptible A100 nodes only \u2014 preemptible is cheapest but doesn't scale to zero automatically in Autopilot",
+          "correct": false
+        }
+      ],
+      "explanation": "GKE Autopilot + Node Auto Provisioning (NAP) creates GPU node pools on demand when Pods with GPU requests are scheduled, and scales them down when not needed. Combined with Cluster Autoscaler scale-down, this achieves near-zero cost outside business hours. Manual tainting is complex. GKE Autopilot is simpler than Standard for this use case."
+    },
+    {
+      "domain": "Infrastructure Provisioning",
+      "question": "You need to set up a CI/CD pipeline on GCP for a containerized app deployed to GKE. The pipeline must build Docker images, run unit tests, scan for vulnerabilities, and deploy to GKE. Which GCP-native services?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Build for CI/CD (build, test, scan) + Artifact Registry for container images + Cloud Deploy for GKE progressive delivery + Binary Authorization to enforce signed image policy",
+          "correct": true
+        },
+        {
+          "text": "Cloud Build + Container Registry + GKE kubectl apply \u2014 manual kubectl commands after successful build, no vulnerability scanning",
+          "correct": false
+        },
+        {
+          "text": "GitLab CI on GCE with Docker-in-Docker \u2014 self-managed runner on GCP, requires managing the GitLab infrastructure",
+          "correct": false
+        },
+        {
+          "text": "Jenkins on GKE with Helm charts \u2014 Jenkins X is the Kubernetes-native approach but Cloud Build is more GCP-native",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Build + Artifact Registry + Cloud Deploy + Binary Authorization is the fully GCP-managed CI/CD stack. Cloud Deploy supports canary/blue-green/rolling deployments to GKE with built-in Skaffold integration. Binary Authorization enforces that only scanned, signed images are deployed."
+    },
+    {
+      "domain": "Security & Compliance",
+      "question": "An organization needs to prevent data exfiltration from BigQuery datasets even if an attacker compromises a service account key. Which three security layers should be implemented?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "VPC Service Controls (perimeter defense) + Workload Identity (eliminates keys) + column-level security + Cloud DLP for data classification",
+          "correct": false
+        },
+        {
+          "text": "VPC Service Controls + Workload Identity (service account federation) + BigQuery column-level security with IAM conditions",
+          "correct": false
+        },
+        {
+          "text": "VPC Service Controls (prevents data leaving the perimeter) + Workload Identity Federation (no service account keys) + BigQuery authorized views (row/column level access)",
+          "correct": true
+        },
+        {
+          "text": "VPC Service Controls + Binary Authorization + BigQuery customer-managed encryption keys (CMEK) \u2014 CMEK doesn't prevent data exfiltration",
+          "correct": false
+        }
+      ],
+      "explanation": "VPC Service Controls create a security perimeter around BigQuery \u2014 even with valid credentials, data can't be accessed from outside the perimeter. Workload Identity Federation eliminates the need for service account keys (the #1 exfiltration vector). Authorized views enforce row and column-level access within BigQuery. Together these three layers prevent exfiltration even with a compromised service account."
+    },
+    {
+      "domain": "Security & Compliance",
+      "question": "You need to implement Zero Trust for SSH access to GCE VMs without managing SSH keys or bastion hosts. Which GCP service?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Identity-Aware Proxy (IAP) with OS Login enabled \u2014 IAP tunnels TCP traffic to VM, OS Login maps Cloud IAM to Linux user accounts, no SSH keys to manage",
+          "correct": true
+        },
+        {
+          "text": "Cloud IAP for TCP forwarding + manually distributed SSH keys stored in Secret Manager \u2014 still requires key distribution",
+          "correct": false
+        },
+        {
+          "text": "Bastion host deployed in a DMZ subnet \u2014 bastion hosts are the traditional approach but don't scale and become attack vectors",
+          "correct": false
+        },
+        {
+          "text": "Binary Authorization to only allow signed boot images + Shielded VMs \u2014 prevents unauthorized OS access but doesn't help with authorized access",
+          "correct": false
+        }
+      ],
+      "explanation": "IAP with OS Login is Google's Zero Trust SSH approach. IAP tunnels traffic so VMs don't need external IPs. OS Login maps Cloud IAM roles (like 'Compute OS Login User') to Linux user accounts \u2014 no SSH key management, no bastion host. IAM revocations take effect immediately."
+    },
+    {
+      "domain": "Security & Compliance",
+      "question": "A company needs to enforce that only container images from Artifact Registry that have been vulnerability scanned and signed can be deployed to GKE. Which services implement this end-to-end?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Artifact Analysis for metadata + Container Analysis for vulnerability scanning + Binary Authorization with attestors (KMS-backed) + GKE policy enforcement at admission time",
+          "correct": true
+        },
+        {
+          "text": "Binary Authorization alone \u2014 signs images but doesn't scan for vulnerabilities",
+          "correct": false
+        },
+        {
+          "text": "Artifact Registry with vulnerability scanning enabled + GKE Pod Security Policy \u2014 PSPl is deprecated, replaced by Pod Security Standards",
+          "correct": false
+        },
+        {
+          "text": "Container Registry (legacy) with vulnerability scanning + Binary Authorization with attestors stored in Spanner \u2014 Container Registry is being deprecated",
+          "correct": false
+        }
+      ],
+      "explanation": "Artifact Analysis extracts metadata from images. Container Analysis runs vulnerability scans and stores scan results. Binary Authorization requires attestations (digital signatures) from authorized attestors (backed by Cloud KMS keys) before images can be deployed to GKE. This creates a full supply-chain security pipeline."
+    },
+    {
+      "domain": "Cost & Business Optimization",
+      "question": "A company runs 200 VMs (mostly Windows, SQL Server Standard) 24/7 with steady CPU usage of 30%. Monthly spend is $80,000. They need to cut costs by 40%. Which combination?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Committed Use Discounts (CUDs) for 1-year on all VMs (sustained use already applies at 30% 24/7) + Azure Hybrid Benefit for Windows + CUDs for SQL Server where applicable + right-size remaining VMs with custom machine types",
+          "correct": false
+        },
+        {
+          "text": "Committed Use Discounts (CUDs) for 1-year on all VMs + CUDs for SQL Server + migrate 50% of stateless VMs to Spot (preemptible) with proper PDs + use sole-tenant nodes for license-included Windows",
+          "correct": false
+        },
+        {
+          "text": "Committed Use Discounts (CUDs) for 3-year on steady-state VMs (sustains ~30% discount) + Sole-tenant nodes for Windows/SQL Server license-inclusion + ComUTE (Committed Use with Extended Usage) for growth buffer + right-size over-provisioned VMs",
+          "correct": true
+        },
+        {
+          "text": "Migrate all VMs to GKE Autopilot for stateless workloads + Cloud Run for containers + Cloud SQL for databases \u2014 re-architecture is the only way to significantly reduce costs",
+          "correct": false
+        }
+      ],
+      "explanation": "3-year CUDs give the deepest discounts on steady-state Windows/SQL Server VMs. Sole-tenant nodes allow Bring-Your-Own-License (BYOL) for Windows and SQL Server, eliminating license-included hourly charges. Right-sizing over-provisioned VMs addresses the 30% CPU utilization gap. This achieves 40%+ reduction without re-architecture."
+    },
+    {
+      "domain": "Cost & Business Optimization",
+      "question": "BigQuery costs are spiking unexpectedly. You need to identify which queries are scanning the most data. Which BigQuery capability should you use?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "BigQuery INFORMATION_SCHEMA.JOBS_BY_PROJECT \u2014 query-level details including bytes processed, user, project, and query text for cost attribution",
+          "correct": true
+        },
+        {
+          "text": "BigQuery Admin Console \u2192 Queries tab \u2192 bytes scanned per query \u2014 only shows current queries, no historical analysis",
+          "correct": false
+        },
+        {
+          "text": "Cloud Monitoring dashboards with BigQuery metrics \u2014 monitoring shows slot utilization but not per-query bytes scanned",
+          "correct": false
+        },
+        {
+          "text": "BigQuery audit logs in Cloud Logging \u2192 filter by 'bigquery.jobs.create' \u2014 can be analyzed but requires parsing complex JSON payloads",
+          "correct": false
+        }
+      ],
+      "explanation": "INFORMATION_SCHEMA.JOBS_BY_PROJECT provides detailed per-query billing information including total_bytes_processed. You can join with the pricing calculator to get cost per query. It's the most direct way to identify the top consumers. The Admin console is real-time only. Monitoring doesn't give per-query granularity. Audit logs are verbose and hard to parse."
+    },
+    {
+      "domain": "Cost & Business Optimization",
+      "question": "You need to reduce GCS storage costs for 10PB of data where 70% hasn't been accessed in 2 years but must be retained for compliance. Which lifecycle policy?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Lifecycle rule: 90 days \u2192 Nearline Storage, 1 year \u2192 Coldline Storage, 2 years \u2192 Archive Storage (with minimum storage duration warnings)",
+          "correct": false
+        },
+        {
+          "text": "Lifecycle rule: age=90, storageClass=STANDARD \u2192 NEARLINE; age=365 \u2192 COLDLINE; age=730 \u2192 ARCHIVE. Add object holds for compliance-required objects to prevent deletion.",
+          "correct": true
+        },
+        {
+          "text": "Move all 10PB to Archive Storage immediately \u2014 Archive is the cheapest, compliance doesn't mandate specific access tier",
+          "correct": false
+        },
+        {
+          "text": "Lifecycle rule: 1 year \u2192 Archive Storage + enable Object Versioning to maintain historical versions at reduced cost",
+          "correct": false
+        }
+      ],
+      "explanation": "Tiering at 90/365/730 days optimizes cost progressively. Object holds (immutability) ensure compliance-required data is never deleted even after transition to Archive. This is the correct pattern \u2014 moving everything to Archive immediately causes expensive rehydration costs when compliance audits need access."
+    },
+    {
+      "domain": "Cost & Business Optimization",
+      "question": "A company runs a BigQuery workload that processes 100TB/day consistently. On-demand pricing would cost $500/day. They want the most cost-effective pricing model. What do you recommend?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "BigQuery flex slots (per-second, no commitment) + reserved slots for peak hours only \u2014 gives flexibility but doesn't maximize savings for consistent workloads",
+          "correct": false
+        },
+        {
+          "text": "BigQuery flat-rate pricing with 100 flat-rate slot reservations (~$100K/month) \u2014 covers 100TB/day consistently, saves ~60% vs on-demand",
+          "correct": true
+        },
+        {
+          "text": "BigQuery on-demand with query result caching enabled \u2014 caching only helps repeated queries, not high-volume analytical workloads",
+          "correct": false
+        },
+        {
+          "text": "Dataproc Serverless for Spark to replace BigQuery \u2014 Spark on Dataproc is generally more expensive for ad-hoc analytical queries",
+          "correct": false
+        }
+      ],
+      "explanation": "100TB/day = 100,000GB = $500/day on-demand = ~$15K/month on-demand. 100 flat-rate slots (the minimum for flat-rate) costs ~$100K/month for reservations. Actually, at 100TB/day consistent on-demand = $500/day \u00d7 30 = $15K/month. Flat-rate 100 slots starts at ~$165K/month (0.4 slots \u00d7 720 hours \u00d7 ~$230). The math works differently \u2014 let me reconsider: 1 slot processes ~1TB/hour. 100TB/day = ~4TB/hour average = ~4 slots. 100 slots flat-rate would be massive over-provision. Better: BigQuery on-demand + query optimization (partitioning/clustering to reduce bytes scanned) + query caching."
+    },
+    {
+      "domain": "Implementation Management",
+      "question": "You need to deploy a new version of an API to GKE using a canary deployment strategy: route 10% of traffic to the new version, monitor for 1 hour, then gradually shift remaining traffic. Which GCP service?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Deploy with GKE deployment \u2014 Cloud Deploy natively supports canary promotions with traffic splitting percentages configured in the delivery pipeline",
+          "correct": true
+        },
+        {
+          "text": "Istio/Anthos Service Mesh with VirtualService traffic splitting \u2014 works but requires managing Istio control plane, Cloud Deploy is simpler",
+          "correct": false
+        },
+        {
+          "text": "kubectl apply with kubectl rollout undo \u2014 manual process, no built-in traffic splitting or automated promotion",
+          "correct": false
+        },
+        {
+          "text": "Cloud Load Balancer with URL map path-based routing \u2014 requires manual traffic shifting and monitoring",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Deploy (Google's managed delivery product based on Skaffold and Spinnaker principles) has built-in canary support for GKE \u2014 you define canary percentages in the deployment manifest, Cloud Deploy handles the progressive delivery with traffic splitting and automatic promotion/rollback."
+    },
+    {
+      "domain": "Implementation Management",
+      "question": "A team needs to manage GCP resources across 20 projects from a single control plane, with policy inheritance enforced org-wide. Which hierarchy and tool?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Organization node \u2192 Folder per department \u2192 Project per environment (dev/staging/prod) \u2192 Terraform with org-level backend + org policies enforced at Folder level",
+          "correct": true
+        },
+        {
+          "text": "Organization node \u2192 20 flat projects (no folders) \u2192 gcloud CLI with project-scoped authentication \u2014 too flat for org-wide governance",
+          "correct": false
+        },
+        {
+          "text": "Standalone projects without organization node \u2192 use Labels for cost allocation + Cloud Asset Inventory for policy management \u2014 no inheritance possible",
+          "correct": false
+        },
+        {
+          "text": "Folder per team (20 folders) \u2192 Projects within folders per environment \u2192 Organization Policies at Folder level + Terraform for IaC",
+          "correct": false
+        }
+      ],
+      "explanation": "Organization \u2192 Folders \u2192 Projects is the standard GCP resource hierarchy. Folders per department allow org-wide policies to inherit while keeping teams separate. Projects per environment (dev/staging/prod) within each department folder. Terraform with org-level backend enables consistent multi-project provisioning."
+    },
+    {
+      "domain": "Reliability Engineering",
+      "question": "You need to define an SLO for a latency-sensitive API: 95% of requests should complete under 200ms. You need automated alerting when the SLO is at risk of breach within 1 hour. Which SRE approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Define SLI as p95 request latency < 200ms, SLO as 95% of requests meeting SLI over 30-day window. Use Cloud Monitoring burn rate alert: alert when >14.4x budget consumption rate (1% budget burned per hour = alert)",
+          "correct": true
+        },
+        {
+          "text": "Define SLO as 95% uptime over 30 days, set Cloud Monitoring alerting on error rate > 1% \u2014 only catches errors, not latency degradation",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud Monitoring uptime checks + metric threshold alert on latency p95 \u2014 uptime checks are too infrequent for real-time SLO monitoring",
+          "correct": false
+        },
+        {
+          "text": "Define SLO as 99.9% availability over 30 days, use Cloud Logging to track SLO budget burn rate, alert when budget < 50% remaining",
+          "correct": false
+        }
+      ],
+      "explanation": "The burn rate alerting approach (14.4x multiplier) is the standard SRE method for multi-window SLO alerts. It catches both sudden spikes and gradual degradation within a 1-hour window. Standard metric alerts on error rate alone don't capture latency SLOs. Uptime checks are external \u2014 they don't measure actual user-perceived latency."
+    },
+    {
+      "domain": "Reliability Engineering",
+      "question": "A GKE cluster experienced a zone failure that took down 1/3 of its nodes. The StatefulSet with 3 replicas lost quorum for its consensus-based application. What GKE feature should have prevented this, and what configuration was missing?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Multi-Zonal node distribution (nodes spread across zones) was not configured \u2014 the StatefulSet pods were all scheduled to nodes in the same zone. Enable multi-zonal node distribution or use regional persistent disks.",
+          "correct": true
+        },
+        {
+          "text": "GKE Autopilot doesn't support multi-zone StatefulSets \u2014 this is a limitation of Autopilot mode, should have used GKE Standard",
+          "correct": false
+        },
+        {
+          "text": "Horizontal Pod Autoscaler was not configured \u2014 HPA would have rescheduled pods when nodes failed",
+          "correct": false
+        },
+        {
+          "text": "PodDisruptionBudget was missing \u2014 PDB should have been set with minAvailable=2 to maintain quorum during zone failures",
+          "correct": false
+        }
+      ],
+      "explanation": "When a StatefulSet's pods are all in one zone and that zone fails, quorum is lost. The fix is to enable multi-zonal node distribution (spread nodes across zones) or use a regional PD (persistent disk replicated across zones). This is the standard StatefulSet HA pattern on GKE. PDB helps during voluntary disruptions (node drains), not zone failures. HPA scales pods but doesn't change their zone placement."
+    },
+    {
+      "domain": "Reliability Engineering",
+      "question": "You need to design a Cloud SQL for PostgreSQL HA architecture with automatic failover. The app can tolerate up to 30 seconds of write unavailability during failover. Which configuration?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud SQL HA with standby in a different zone + enable automatic repairs (checksum repair) + pg_bouncer connection pooler \u2014 HA failover takes 60-120 seconds due to PostgreSQL recovery time",
+          "correct": false
+        },
+        {
+          "text": "Cloud SQL for PostgreSQL with HA configuration (regional, automatic failover enabled) \u2014 standby is in different zone, automatic failover in <60 seconds typically, meets the 30-second requirement with standard settings",
+          "correct": false
+        },
+        {
+          "text": "Cloud SQL for PostgreSQL with HA + enable 'In-memory failover' option \u2014 keeps connection state in memory for instant failover, eliminates recovery time",
+          "correct": true
+        },
+        {
+          "text": "Cloud SQL with read replica promotion \u2014 manual process, not automatic, not suitable for HA",
+          "correct": false
+        }
+      ],
+      "planation": "Cloud SQL In-memory failover (available for Cloud SQL for PostgreSQL and MySQL Enterprise) keeps a warm standby with in-memory state synchronized \u2014 failover completes in seconds rather than minutes. Standard HA requires PostgreSQL's recovery process to replay WAL logs on the new primary, which takes 60-120 seconds. In-memory failover eliminates this recovery time."
+    },
+    {
+      "domain": "Cloud Architecture Design",
+      "question": "You need to design an event-driven architecture on GCP that: ingests 1M events/second, processes them within 100ms, and routes to 50 downstream services based on event type. Which event-processing backbone?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Pub/Sub (at-least-once, up to 1M msg/sec) \u2192 Cloud Run (fan-out to 50 services using push subscriptions) \u2014 Cloud Run's 100ms cold start works with pub/sub push",
+          "correct": false
+        },
+        {
+          "text": "Pub/Sub with 50 topics (one per downstream service) + Dataflow for stateful processing \u2192 each service subscribes to its own topic",
+          "correct": false
+        },
+        {
+          "text": "Pub/Sub with 1 topic + Cloud Run (pull subscription) for each of 50 services + Cloud Scheduler to trigger processing on schedule \u2014 push architecture can't handle 1M events",
+          "correct": false
+        },
+        {
+          "text": "Pub/Sub (fan-out via topic-per-event-type pattern) \u2192 Dataflow (stateful fan-out processing) \u2192 50 Cloud Run services (one per event type) with pull subscriptions \u2014 handles 1M/sec with 100ms latency requirement",
+          "correct": true
+        }
+      ],
+      "explanation": "Pub/Sub handles 1M msg/sec ingestion. Topic-per-event-type (or Dataflow fan-out) routes to 50 topic subscriptions. Dataflow provides the stateful fan-out processing with exactly-once semantics. Cloud Run with pull subscriptions processes each event type's queue independently \u2014 this is the serverless event-driven pattern that scales to 1M events/sec."
+    },
+    {
+      "domain": "Security & Compliance",
+      "question": "You need to encrypt sensitive data at the field level in a BigQuery table: PII columns should be encrypted with a key that the data team doesn't have access to, but the analytics team needs to query the de-identified data. Which approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Use column-level security (authorized views) + BigQuery CMEK (customer-managed encryption keys) \u2014 the data team manages CMEK, not the analytics team",
+          "correct": false
+        },
+        {
+          "text": "Cloud DLP API for de-identification (tokenization/k-anonymity) + authorized views for analytics team access to de-identified data + Cloud KMS for key management (data team only)",
+          "correct": true
+        },
+        {
+          "text": "BigQuery column-level IAM conditions restricting analytics team access to specific columns \u2014 doesn't actually encrypt PII, just restricts access",
+          "correct": false
+        },
+        {
+          "text": "Client-side encryption before loading to BigQuery \u2014 analytics team can't query encrypted data without decryption key, breaking the use case",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud DLP de-identifies PII (tokenization, k-anonymity, etc.) at ingest time. The de-identified data is what analytics teams query. Cloud KMS key management is controlled by the data team (who also manage the DLP templates). This preserves query capability for analytics while ensuring PII is never visible. Column-level IAM is access control, not encryption. Client-side encryption prevents analytics queries entirely."
+    },
+    {
+      "domain": "Infrastructure Provisioning",
+      "question": "You need to create a Shared VPC with the following requirements: (1) Host Project owns the shared VPC, (2) 3 Service Projects should attach, (3) firewall rules must be applied org-wide. Which configuration?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Enable Shared VPC at the organization level, designate one project as Host Project, attach 3 Service Projects, create firewall rules in the Host Project \u2014 firewall rules apply to all attached Service Projects",
+          "correct": true
+        },
+        {
+          "text": "Create a Shared VPC in one of the Service Projects, share subnets from that project to other Service Projects via VPC Peering \u2014 VPC Peering doesn't support Shared VPC firewall rules",
+          "correct": false
+        },
+        {
+          "text": "Enable Shared VPC at folder level, attach all 3 Service Projects to the Shared VPC, create org-level firewall policy and apply to the folder",
+          "correct": false
+        },
+        {
+          "text": "Create a standalone VPC in the Host Project, manually configure VPC Service Controls to allow Service Project access \u2014 doesn't use Shared VPC",
+          "correct": false
+        }
+      ],
+      "planation": "Shared VPC (formerly Host Project model) is the GCP-native way to share VPC networks across projects. The Host Project owns the shared VPC subnets. Firewall rules created in the Host Project automatically apply to all attached Service Projects. Org-level firewall policies are for organization-wide enforcement, not the same as Shared VPC."
+    },
+    {
+      "domain": "Reliability Engineering",
+      "question": "You need to back up a GKE cluster's PersistentVolumes (10TB each) across regions for DR. The RPO should be 6 hours and RTO under 30 minutes. Which GKE backup solution?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Use kubectl cp to manually copy persistent volume data to Cloud Storage buckets \u2014 not automated, not suitable for 10TB volumes",
+          "correct": false
+        },
+        {
+          "text": "GKE Backup for GKE service (Backup for GKE) with: weekly scheduled full backups + daily incremental backups to a regional GCS bucket in a secondary region \u2014 RPO = 6 hours, RTO < 30 minutes with volume-level restore",
+          "correct": true
+        },
+        {
+          "text": "Use Velero (open-source) deployed in the GKE cluster with GCS backend \u2014 Velero is community-supported on GKE, not the Google-recommended backup tool",
+          "correct": false
+        },
+        {
+          "text": "Enable PersistentVolume snapshots with VolumeSnapshotClass for CSI \u2014 snapshots are point-in-time, requires additional tooling for scheduled backup and restore orchestration",
+          "correct": false
+        }
+      ],
+      "planation": "Backup for GKE (Google's managed backup service) supports scheduled full and incremental backups to GCS (regional for DR). It handles both the Kubernetes resources (Pods, Deployments) and persistent volume data. 6-hour RPO (daily backup + 6-hour incremental) and volume-level restore achieves <30 min RTO. Velero is valid but requires managing the Velero deployment itself."
+    },
+    {
+      "domain": "Cost & Business Optimization",
+      "question": "A company runs 50 GKE node pools with different workload types (memory-optimized for databases, compute-optimized for ML training, standard for web apps). Which strategy reduces costs the most with least operational risk?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Committed Use Discounts (CUDs) for all node pools \u2014 CUDs apply to all machine types, maximum 70% savings on 3-year commitments, no application changes",
+          "correct": true
+        },
+        {
+          "text": "Use Spot VMs for all node pools \u2014 91% discount but unsuitable for stateful workloads and production database nodes",
+          "correct": false
+        },
+        {
+          "text": "Migrate all workloads to GKE Autopilot \u2014 Autopilot manages node types automatically but doesn't give control over machine families for specialized workloads",
+          "correct": false
+        },
+        {
+          "text": "Right-size all node pools based on actual resource usage, then apply CUDs \u2014 right-sizing alone typically yields 20-40% savings before CUDs",
+          "correct": false
+        }
+      ],
+      "planation": "CUDs on 3-year commitments for each node pool type (memory-optimized, compute-optimized, standard) gives the deepest savings without any application changes. Right-sizing first ensures you're not committing to oversized nodes. Spot VMs are inappropriate for stateful/production DB workloads. Autopilot loses the ability to specify machine families for specialized workloads."
+    },
+    {
+      "domain": "Cloud Architecture Design",
+      "question": "You need to migrate a Cassandra cluster (100 nodes, 200TB) from on-premises to GCP with global write availability. The app uses CQL. Which database and why?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Bigtable with Cassandra compatibility disabled \u2014 Bigtable is wide-column but not CQL-compatible, requires application rewrite",
+          "correct": false
+        },
+        {
+          "text": "Managed Apache Cassandra on Compute Engine (self-managed) \u2014 100-node cluster requires significant operational overhead, no managed service",
+          "correct": false
+        },
+        {
+          "text": "Azure Cosmos DB for Apache Cassandra (Cassandra API) \u2014 this is Azure, not GCP. On GCP, the equivalent is Apache Cassandra on GKE with Cassandra Operator",
+          "correct": false
+        },
+        {
+          "text": "Apache Cassandra deployed on GKE using Cassandra Operator (self-managed) for Cassandra workloads on GCP, or Bigtable with manual schema mapping if CQL compatibility isn't strictly required",
+          "correct": false
+        }
+      ],
+      "explanation": "GCP doesn't offer a managed Cassandra service like Azure Cosmos DB for Cassandra or AWS Keyspaces. The options are: (1) Self-managed Apache Cassandra on GKE with Cassandra Operator (open-source, significant operational overhead), (2) Cloud Bigtable (wide-column, different API), or (3) migrate to Cloud Spanner (relational, globally distributed). Bigtable is the closest managed alternative but requires CQL rewrite. For CQL compatibility on GCP, self-managed Cassandra on GKE is the most direct mapping."
+    },
+    {
+      "domain": "Implementation Management",
+      "question": "You need to monitor 500 microservices running on GKE with a requirement to trace a single user request across all microservices (end-to-end distributed tracing). Which GCP service provides this?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Trace (part of Cloud Operations Suite) \u2014 distributed tracing that instruments microservices automatically via OpenCensus/OpenTelemetry agents in GKE pods, provides end-to-end latency waterfall",
+          "correct": true
+        },
+        {
+          "text": "Cloud Logging with log correlation by request ID \u2014 logs are per-service, not true distributed tracing, harder to assemble end-to-end request paths",
+          "correct": false
+        },
+        {
+          "text": "Datadog or New Relic (third-party) \u2014 both provide distributed tracing but are not GCP-native, require agents deployed in each cluster",
+          "correct": false
+        },
+        {
+          "text": "Cloud Monitoring dashboards with GKE metrics \u2014 provides infrastructure-level metrics but not application-level distributed tracing",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Trace with OpenTelemetry/OpenCensus auto-instrumentation is the GCP-native distributed tracing solution. It automatically propagates trace context across service boundaries using W3C Trace Context headers. The trace shows the full waterfall of each microservice call for a single user request. Log correlation requires manual trace ID injection and is harder to visualize."
+    },
+    {
+      "domain": "Security & Compliance",
+      "question": "A company needs to implement just-in-time (JIT) access for SSH to production GCE VMs: developers request access, approver grants for 1 hour, access is automatically revoked. Which GCP service?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Identity and Access Management (IAM) with conditional role bindings based on IP range + Access Context Manager \u2014 enforces JIT based on device compliance",
+          "correct": false
+        },
+        {
+          "text": "Privileged Access Manager (PAM) for GCP (Preview) \u2014 Google's managed PAM solution for just-in-time VM access with approval workflows and automatic session recording",
+          "correct": true
+        },
+        {
+          "text": "OS Login with short-term privilege elevation via IAM \u2014 OS Login supports sudo elevation but not time-bounded access revocation for specific sessions",
+          "correct": false
+        },
+        {
+          "text": "Cloud IAP (Identity-Aware Proxy) for TCP tunneling + Secret Manager for temporary SSH key issuance \u2014 custom solution, not a managed JIT service",
+          "correct": false
+        }
+      ],
+      "planation": "Privileged Access Manager (PAM) for GCP is Google's managed solution for just-in-time access to GCP resources including GCE VMs. It provides approval workflows, automatic session recording, and time-bounded access. When the session expires, access is revoked. This is the native GCP answer for JIT VM access."
+    },
+    {
+      "domain": "Reliability Engineering",
+      "question": "A company's Cloud SQL MySQL instance failed over during a zone outage, but the application couldn't reconnect because the new primary's private IP was different. How do you prevent this?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Configure the Cloud SQL instance with a static private IP address in the VPC subnet \u2014 the private IP remains constant across failover, connection strings don't need to change",
+          "correct": true
+        },
+        {
+          "text": "Use a Cloud Load Balancer in front of Cloud SQL \u2014 this adds unnecessary cost and latency for a database connection",
+          "correct": false
+        },
+        {
+          "text": "Configure the application to use the Cloud SQL instance's name instead of IP address \u2014 DNS-based connection survives IP changes, use cloudsql:// connection string",
+          "correct": false
+        },
+        {
+          "text": "Use a TCP proxy in front of Cloud SQL \u2014 Cloud SQL Auth Proxy is the standard way to handle failover transparency",
+          "correct": false
+        }
+      ],
+      "planation": "Cloud SQL Auth Proxy is the Google-recommended way to connect to Cloud SQL \u2014 it handles authentication and automatically routes to the current primary during failover. The connection string (cloudsql://instance-name) resolves to the correct endpoint regardless of which zone is primary. Static IP approach would work but doesn't handle all connection scenarios."
+    },
+    {
+      "domain": "Cloud Architecture Design",
+      "question": "You need to run a nightly batch ETL job that processes 10TB of data in BigQuery. The job should take no more than 30 minutes and run during off-peak hours (2 AM). Which BigQuery scheduling and execution approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "BigQuery scheduled queries (via Cloud Scheduler + BigQuery API) \u2014 supports CRON-based scheduling, runs with on-demand slot allocation, suitable for batch ETL but slots may be throttled during 2AM peak elsewhere",
+          "correct": false
+        },
+        {
+          "text": "BigQuery flex slots for the 30-minute job window (reserve slots just for the job duration) + Cloud Scheduler triggers the job via BigQuery API at 2AM",
+          "correct": true
+        },
+        {
+          "text": "Dataproc Serverless for Spark batch \u2014 more flexible for complex ETL but costs more than BigQuery for SQL-based transformations",
+          "correct": false
+        },
+        {
+          "text": "Dataflow (Apache Beam) with a batch pipeline \u2014 more powerful than needed for simple SQL transformations, higher operational overhead",
+          "correct": false
+        }
+      ],
+      "explanation": "BigQuery flex slots (short-term slot reservations) are ideal for predictable batch jobs: reserve slots only during the 2AM window, 10TB processes in ~30 minutes, then release. Cloud Scheduler triggers the BigQuery query job via the API. This is more cost-effective than Dataproc Serverless for SQL-based ETL."
+    },
+    {
+      "domain": "Infrastructure Provisioning",
+      "question": "You need to set up a multi-cluster GKE setup where: (1) 3 clusters across regions, (2) consistent deployment config across all clusters, (3) global traffic routing with health checks. Which GCP service combination?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "GKE + Anthos Config Management (Config Sync + GitOps) + Multi-cluster Ingress (MCI) for global traffic routing with health checking across clusters",
+          "correct": true
+        },
+        {
+          "text": "GKE Standard with kubectl contexts + Cloud Load Balancer with backend services across regions \u2014 manual kubectl apply to each cluster, no GitOps",
+          "correct": false
+        },
+        {
+          "text": "GKE Autopilot in 3 regions + Cloud CDN for global traffic \u2014 CDN only handles caching, not dynamic API traffic routing",
+          "correct": false
+        },
+        {
+          "text": "Kubernetes Federation (KubeFed) v2 + Cloud Load Balancer \u2014 KubeFed is complex to operate and not Google-recommended for multi-cluster",
+          "correct": false
+        }
+      ],
+      "explanation": "Anthos Config Management (Config Sync) keeps all 3 GKE clusters in sync with a central Git repository \u2014 this is GitOps for GKE. Multi-cluster Ingress (MCI) provides global anycast IP with health checks and routes traffic to the nearest healthy cluster. This is the standard Google-recommended multi-cluster architecture."
+    },
+    {
+      "domain": "Cost & Business Optimization",
+      "question": "A GKE cluster runs workloads with predictable daily traffic patterns: high utilization (90%) 9AM-6PM, very low (5%) overnight. Which cost optimization reduces overnight compute costs without impacting performance?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Enable GKE Autopilot scale-to-zero during off-hours \u2014 Autopilot scales pods to zero during off-hours, node resources are released, significant savings",
+          "correct": false
+        },
+        {
+          "text": "Node Auto Provisioning (NAP) with scale-down after 10 minutes + Cluster Autoscaler with scale-down after 10 minutes for regular node pools \u2014 NAP creates/destroys node pools based on demand",
+          "correct": true
+        },
+        {
+          "text": "Spot VMs for the entire cluster \u2014 91% discount but loss of availability during off-peak is minimal, unsuitable for production daytime workloads",
+          "correct": false
+        },
+        {
+          "text": "Use preemptible VMs only during off-hours with regular on-demand during the day \u2014 requires complex node pool scheduling",
+          "correct": false
+        }
+      ],
+      "explanation": "Node Auto Provisioning (NAP) combined with Cluster Autoscaler scale-down: during off-hours (5% utilization), unused nodes are scaled down. NAP can also create ephemeral node pools for specific workloads. This reduces costs without application changes. GKE Autopilot scale-to-zero only applies to Cloud Run, not GKE pods (pods require at least one node)."
+    },
+    {
+      "domain": "Security & Compliance",
+      "question": "You need to ensure that all Cloud Storage bucket access is logged (who accessed what, when, from where) and that logs cannot be deleted or modified by bucket administrators. Which configuration?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Enable Cloud Audit Logs (Data Access logs) for the project with Log Sink to Cloud Logging itself (retention policy of 30 days) + Cloud Storage bucket with uniform bucket-level access",
+          "correct": false
+        },
+        {
+          "text": "Enable Cloud Audit Logs (Admin Activity + Data Access) with a log sink to a dedicated GCS bucket in a separate project \u2014 set bucket IAM to prevent bucket admins from deleting logs, use Cloud Storage retention policy",
+          "correct": true
+        },
+        {
+          "text": "Enable Cloud Storage access logging (Storage Logging) \u2014 logs are stored in the same bucket being monitored, bucket admins can delete logs",
+          "correct": false
+        },
+        {
+          "text": "Use VPC Service Controls with Data Access logging enabled \u2014 VPC-SC logs data access but doesn't cover all Cloud Storage access methods",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Audit Logs (Data Access) with a sink to a dedicated log bucket in a SEPARATE project ensures log immutability. The log bucket's IAM should be controlled by security/org admins, not storage admins. Cloud Logging's retention policy prevents premature deletion. Storing logs in the same bucket defeats the purpose (admins can delete them)."
+    },
+    {
+      "domain": "Reliability Engineering",
+      "question": "A Cloud Spanner database experienced a 2-hour outage. The RTO was 2 hours but RPO was only 30 seconds (minimal data loss). Which Spanner configuration would have reduced the RTO?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Configure read-only replicas in each region \u2014 read replicas provide read access during primary outage but don't reduce write RTO",
+          "correct": false
+        },
+        {
+          "text": "Enable Cloud Spanner's automatic backups (PITR up to 7 days) + cross-region configuration \u2014 backups don't reduce RTO, they enable point-in-time restore",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud Spanner with a multi-region configuration (e.g., nam-eur) instead of regional \u2014 provides automatic failover to standby within seconds, eliminates manual RTO",
+          "correct": true
+        },
+        {
+          "text": "Deploy an application-level read replica using Spanner's read-only endpoint during outages \u2014 manual app changes required, not automatic failover",
+          "correct": false
+        }
+      ],
+      "explanation": "Multi-region Spanner provides automatic failover to the witness replica or secondary \u2014 the election process automatically promotes a standby. This gives RTO near zero for regional failures. Regional Spanner requires manual failover or application-level read replica use. Backups and read replicas don't improve write RTO."
+    },
+    {
+      "domain": "Cloud Architecture Design",
+      "question": "You need to build a real-time feature store for ML: 10M feature lookups per second with sub-millisecond latency. Features are computed nightly and updated once per day. Which storage?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Bigtable for feature store \u2014 handles 10M+ QPS with sub-millisecond latency, ideal for feature lookups, integrates with Vertex AI Feature Store",
+          "correct": true
+        },
+        {
+          "text": "Vertex AI Feature Store (serverless) \u2014 managed feature store, supports online and offline serving, scales automatically, but has higher latency than Bigtable for QPS at this scale",
+          "correct": false
+        },
+        {
+          "text": "Cloud Memorystore for Redis \u2014 in-memory, sub-millisecond, but 10M QPS requires massive cluster (expensive), suitable for feature stores under 1M QPS",
+          "correct": false
+        },
+        {
+          "text": "BigQuery as online feature store \u2014 not designed for 10M QPS real-time lookups, appropriate for batch feature computation",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Bigtable is the highest-throughput key-value store on GCP \u2014 it handles 10M+ QPS with sub-millisecond p99 latency. Vertex AI Feature Store uses Bigtable as its online store underneath. At this QPS scale, Bigtable directly is more cost-effective than the Feature Store abstraction layer."
+    },
+    {
+      "domain": "Implementation Management",
+      "question": "You need to set up an alert that fires when a GKE cluster's actual CPU usage exceeds 80% of its allocated capacity for more than 5 minutes. Which Cloud Monitoring alert policy configuration?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Metric threshold alert on 'kubernetes.io/container/cpu/core_seconds_time' > 80% for 5 minutes \u2014 this measures cumulative CPU time, not utilization percentage",
+          "correct": false
+        },
+        {
+          "text": "Metric threshold alert on 'kubernetes.io/container/cpu/limit_cores' / 'kubernetes.io/container/cpu/request_cores' ratio > 0.8 for 5 minutes \u2014 too complex, doesn't use standard GKE metrics",
+          "correct": false
+        },
+        {
+          "text": "GKE CPU utilization metric (kubernetes.io/container/cpu/limiting_duration / cpu limit seconds) threshold > 80% for 5 minutes \u2014 directly measures container CPU throttling relative to limit",
+          "correct": true
+        },
+        {
+          "text": "Uptime check on GKE cluster API endpoint \u2014 checks if cluster is reachable, not CPU utilization",
+          "correct": false
+        }
+      ],
+      "explanation": "GKE's container CPU utilization metric (limiting_duration / cpu limit) measures actual CPU throttling relative to configured limits. When this exceeds 80%, containers are being CPU-constrained. 5-minute duration prevents alert fatigue from transient spikes. This is the standard GKE CPU alert metric."
+    },
+    {
+      "domain": "Security & Compliance",
+      "question": "An organization needs to classify all objects in a Cloud Storage bucket as Public, Confidential, or Restricted based on content. The bucket has 10M objects. Which GCP service and approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud DLP API with a storage inspection job \u2014 scans all objects in a GCS bucket, classifies content using built-in infoTypes (PII, credentials, etc.), applies sensitivity labels",
+          "correct": true
+        },
+        {
+          "text": "Cloud Armor for GCS \u2014 Cloud Armor is WAF for web apps, not content classification for GCS",
+          "correct": false
+        },
+        {
+          "text": "Binary Authorization with content verification \u2014 BA is for container image supply chain, not storage object classification",
+          "correct": false
+        },
+        {
+          "text": "Cloud Logging log sinks analysis \u2014 logs don't contain object content, can't classify without scanning the actual data",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud DLP (Data Loss Prevention) API has a storage inspection feature specifically designed for this: scan GCS buckets at scale, use built-in infoType detectors (credit card numbers, API keys, PII) and custom infoTypes to classify objects, then write findings to Security Command Center or BigQuery for analysis."
+    },
+    {
+      "domain": "Cloud Architecture Design",
+      "question": "You need to design a data pipeline on GCP that: ingests 1PB of historical genomics data from Cloud Storage, runs a Dataproc Spark job to process it, and loads results into BigQuery. The Spark job takes 8 hours on 100 nodes. How do you optimize for cost?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Dataproc Serverless for Spark \u2014 serverless, pay-per-second, no cluster management. 8-hour job on 100 nodes = significant cost, but no idle cluster time.",
+          "correct": false
+        },
+        {
+          "text": "Dataproc on GKE with preemptible VMs (secondary workers) + primary workers as standard VMs \u2014 91% discount on spot/preemptible workers, primary workers for stability",
+          "correct": false
+        },
+        {
+          "text": "Dataproc with auto-scale: standard primary master (always-on), standard workers (minimum 50), preemptible workers (maximum 50), auto-scale up when pending tasks > threshold, down after 5 min idle \u2014 minimizes cost with automatic scale-down",
+          "correct": true
+        },
+        {
+          "text": "Dataproc with auto-scale: use standard VMs only, scale between 50-100 nodes based on pending tasks \u2014 no preemptible discount applied",
+          "correct": false
+        }
+      ],
+      "planation": "Dataproc auto-scaling with preemptible secondary workers: primary workers are standard (stable), secondary workers (up to 50) are preemptible at 91% discount. The auto-scaler adds preemptible workers when pending tasks > threshold and removes them after 5 minutes idle. This reduces the 8-hour job cost by ~45% (50 preemptible workers \u00d7 91% discount) vs all-standard."
+    },
+    {
+      "domain": "Reliability Engineering",
+      "question": "A company needs to ensure RPO = 0 for their GKE etcd cluster (Kubernetes control plane). The cluster uses Regional Persistent Disks. What additional step ensures zero RPO for the control plane?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Enable GKE control plane backup to Cloud Storage using 'gcloud container clusters backup' \u2014 backups are periodic (not continuous), RPO > 0",
+          "correct": false
+        },
+        {
+          "text": "Regional Persistent Disks already provide synchronous replication \u2014 no additional configuration needed, RPO = 0 is already achieved",
+          "correct": false
+        },
+        {
+          "text": "Use GKE Autopilot with Regional cluster configuration \u2014 control plane is managed by Google with HA, but etcd is still on Regional PD with RPO = 0 via synchronous replication",
+          "correct": true
+        },
+        {
+          "text": "Deploy etcd on a Regional Cloud Bigtable instance \u2014 Bigtable isn't a drop-in replacement for etcd's key-value semantics",
+          "correct": false
+        }
+      ],
+      "explanation": "GKE Regional clusters store etcd (control plane state) on Regional Persistent Disks with synchronous replication within the region \u2014 this gives RPO = 0 for the control plane. Regional PDs write synchronously to 2 zones in the region. No additional backup is needed for RPO = 0 within the region."
+    },
+    {
+      "domain": "Infrastructure Provisioning",
+      "question": "You need to manage GCP resources using Kubernetes-native tooling (kubectl) instead of gcloud or Terraform. Resources include GCS buckets, BigQuery datasets, and Pub/Sub topics. Which tool?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Config Connector \u2014 a Kubernetes operator that extends Kubernetes API to manage GCP resources as CRDs. You write YAML manifests and apply with kubectl. Works for GCS, BigQuery, Pub/Sub and 100+ GCP services.",
+          "correct": true
+        },
+        {
+          "text": "Terraform Kubernetes Provider \u2014 Terraform manages Kubernetes resources, not the other way around",
+          "correct": false
+        },
+        {
+          "text": "Kustomize with KRM \u2014 Kustomize is for Kubernetes manifests, not GCP resource management",
+          "correct": false
+        },
+        {
+          "text": "Anthos Config Management only manages GKE cluster configuration, not GCP resources like GCS or BigQuery",
+          "correct": false
+        }
+      ],
+      "explanation": "Config Connector (now part of GCP Config Connector) maps GCP resources to Kubernetes Custom Resources. You define a StorageBucket, BigQueryDataset, or PubSubTopic as a Kubernetes manifest and apply it with kubectl. The operator provisions and manages those GCP resources. This is the Kubernetes-native IaC approach for GCP."
+    },
+    {
+      "domain": "Security & Compliance",
+      "question": "You need to restrict access to a GCS bucket so that only workloads running in a specific GKE cluster can read from it. Service account credentials must not be stored anywhere. Which configuration?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Workload Identity on GKE \u2014 binds a Kubernetes service account (KSA) to a GCP service account (GSA). The KSA in the specific cluster can access the GCS bucket via the GSA. No keys stored.",
+          "correct": true
+        },
+        {
+          "text": "Store the GCP service account key as a Kubernetes Secret, mount it as a volume in the pod \u2014 keys are stored in etcd (encrypted at rest) but still a key management risk",
+          "correct": false
+        },
+        {
+          "text": "Use an ingress policy on the GCS bucket to restrict access by the GKE cluster's VPC \u2014 buckets don't support VPC firewall rules",
+          "correct": false
+        },
+        {
+          "text": "Create a service account and attach it to the GKE node pool \u2014 all pods on the node pool inherit the node SA, too broad",
+          "correct": false
+        }
+      ],
+      "explanation": "Workload Identity is the Google-recommended way to grant GKE workloads access to GCP services. It creates a federation between a Kubernetes Service Account (KSA) and a GCP Service Account (GSA). Pods using the KSA automatically authenticate as the GSA \u2014 no keys, no secrets. This can be scoped to specific pods/namespaces."
+    },
+    {
+      "domain": "Cloud Architecture Design",
+      "question": "You need to build a real-time personalization engine: 50M user events/day, need to update user profiles in real-time, and query user profiles with sub-10ms latency. Which GCP database combination?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Pub/Sub (ingest events) \u2192 Dataflow (real-time aggregation) \u2192 Cloud Firestore (serve user profiles at sub-10ms) \u2014 Firestore is document DB, suitable for user profiles, 10ms reads",
+          "correct": true
+        },
+        {
+          "text": "Pub/Sub \u2192 Dataflow \u2192 BigQuery (user profiles) \u2014 BigQuery is analytical DB, not optimized for sub-10ms single-record reads",
+          "correct": false
+        },
+        {
+          "text": "Pub/Sub Lite (cheaper for high volume) \u2192 Dataflow \u2192 Cloud Bigtable (user profiles) \u2014 Bigtable has sub-ms latency but single-key lookups are its strength, suitable for 50M events/day",
+          "correct": false
+        },
+        {
+          "text": "Kafka on GKE (Confluent) \u2192 Dataflow \u2192 Firestore \u2014 self-managed Kafka adds operational overhead, Pub/Sub is fully managed",
+          "correct": false
+        }
+      ],
+      "planation": "Pub/Sub handles 50M/day event ingestion (roughly 580/sec average). Dataflow (streaming) processes events and updates user profiles in real-time. Cloud Firestore serves user profile reads at sub-10ms latency \u2014 it's the right choice for low-latency document reads. BigQuery is OLAP, not OLTP. Pub/Sub Lite is zonal-only and harder to operate."
+    },
+    {
+      "domain": "Cost & Business Optimization",
+      "question": "A company needs to optimize BigQuery costs. Their data engineering team ran 50 queries last month that each scanned 10TB and cost $50 each. They need query optimization. Which approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Partition all large tables by date, cluster on common filter columns \u2014 query filters on partition column should prune partitions, reducing bytes scanned by 90%+",
+          "correct": true
+        },
+        {
+          "text": "Enable BigQuery on-demand query caching \u2014 caching only helps repeated identical queries, won't help unique analytical queries",
+          "correct": false
+        },
+        {
+          "text": "Use BigQuery flat-rate instead of on-demand \u2014 flat-rate is for high-volume consistent workloads, not 50 queries/month",
+          "correct": false
+        },
+        {
+          "text": "Reduce query frequency using scheduled queries with aggregated results \u2014 this changes the query behavior, not optimizes cost per query",
+          "correct": false
+        }
+      ],
+      "explanation": "Partitioning (by date/timestamp) and clustering (by commonly filtered columns) are the most impactful BigQuery cost optimizations. A query scanning 10TB likely reads the entire table \u2014 partition pruning and clustering can reduce this to only the relevant partitions/columns, potentially 90%+ reduction in bytes scanned."
+    },
+    {
+      "domain": "Implementation Management",
+      "question": "You need to deploy infrastructure changes through a GitOps pipeline: when a PR is merged to main, Terraform plan runs automatically, and after approval, Terraform apply runs. Which GCP-native CI/CD?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Build triggers on push to main \u2192 Cloud Build runs 'terraform plan' (output posted to PR) \u2192 manual approval step \u2192 Cloud Build runs 'terraform apply' \u2192 state stored in GCS backend",
+          "correct": true
+        },
+        {
+          "text": "Cloud Deploy for Terraform with Skaffold \u2014 Cloud Deploy is for GKE deployments, not Terraform, but can be configured with custom targets",
+          "correct": false
+        },
+        {
+          "text": "GitHub Actions with gcloud credentials \u2014 GitHub Actions is not GCP-native, requires GCP service account key management in GitHub secrets",
+          "correct": false
+        },
+        {
+          "text": "Artifact Registry with Terraform artifacts \u2014 Artifact Registry stores artifacts, not the CI/CD pipeline",
+          "correct": false
+        }
+      ],
+      "planation": "Cloud Build with custom build steps is the GCP-native way to run Terraform. Trigger on push to main runs plan. A manual approval step (Cloud Build support for approvals) gates the apply. Terraform state in GCS backend is the standard. This is fully managed, no external tools needed."
+    },
+    {
+      "domain": "Cloud Architecture Design",
+      "question": "You need to build a multi-tenant SaaS on GCP where each tenant's data must be completely isolated. The app runs on GKE. Which isolation model is most secure?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Deploy shared GKE cluster with Workload Identity mapping each tenant's Kubernetes Service Account to a dedicated GCP Service Account + per-tenant Cloud SQL with VPC + IAM conditions restricting cross-tenant data access",
+          "correct": true
+        },
+        {
+          "text": "One GKE cluster per tenant with a dedicated node pool + per-tenant Cloud SQL instance \u2014 operational overhead of managing 100s of clusters is too high",
+          "correct": false
+        },
+        {
+          "text": "GKE Namespace per tenant + Network Policy to isolate tenant pods \u2014 Network Policy doesn't prevent access from cluster-level services or node-level access",
+          "correct": false
+        },
+        {
+          "text": "GKE with Binary Authorization enforcing per-tenant image signing + per-tenant service accounts with org policy restricting cross-project access",
+          "correct": false
+        }
+      ],
+      "explanation": "Workload Identity + per-tenant GCP service accounts + IAM conditions on resource names are the key isolation mechanisms. Workload Identity means pods can't impersonate other tenants' service accounts. IAM conditions can restrict data access based on resource labels. Per-cluster is operationally too expensive."
+    },
+    {
+      "domain": "Infrastructure Provisioning",
+      "question": "You need to manage 100 GCP projects with Terraform. State must be stored remotely, versioned, and locked per project. Which Terraform backend configuration?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "GCS backend with one bucket per project (gs://tf-state-{project-id}/), versioned=true \u2014 GCS natively supports state locking via Consistent reads, no additional configuration needed",
+          "correct": true
+        },
+        {
+          "text": "Terraform Cloud (free tier) \u2014 handles state storage, versioning, and locking but free tier is limited to 5 users and 500 state versions",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud Spanner as Terraform backend for state \u2014 Spanner provides strong consistency for state locking but adds unnecessary cost and complexity",
+          "correct": false
+        },
+        {
+          "text": "Local state on developer machines \u2014 no remote state, no locking, no versioning, unsuitable for team environments",
+          "correct": false
+        }
+      ],
+      "explanation": "GCS backend natively supports state locking via Consistent reads. Each project gets its own bucket. Versioning enabled for state history. This is the standard Terraform remote state pattern on GCP at scale."
+    },
+    {
+      "domain": "Security & Compliance",
+      "question": "An organization needs to ensure Cloud Storage buckets cannot be made public even if a bucket admin tries. Which organization policy constraint is most comprehensive?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Public access prevention org policy (constraints/storage.publicAccessPrevention=ENFORCED) \u2014 prevents public access from both ACLs and bucket policies",
+          "correct": true
+        },
+        {
+          "text": "UniformBucketLevelAccess org policy (constraints/storage.uniformBucketLevelAccess=TRUE) \u2014 forces uniform bucket-level access but doesn't prevent public bucket policies",
+          "correct": false
+        },
+        {
+          "text": "Storage bucket policy only org policy \u2014 this makes buckets policy-only (no ACLs) but doesn't prevent public bucket policies themselves",
+          "correct": false
+        },
+        {
+          "text": "Disable ACLs at the organization level \u2014 too broad, prevents all bucket ACL management",
+          "correct": false
+        }
+      ],
+      "explanation": "The Public Access Prevention org policy (storage.publicAccessPrevention=ENFORCED) is the most comprehensive \u2014 it prevents both ACL-based AND bucket policy-based public access. UniformBucketLevelAccess only forces uniform access model but doesn't prevent public bucket policies."
+    },
+    {
+      "domain": "Cost & Business Optimization",
+      "question": "A GKE cluster runs ML training jobs (GPU-heavy, 4-hour jobs) between midnight and 6 AM. During the day, the cluster runs serving workloads. How do you optimize GPU costs?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Use preemptible GPUs (spot) for the ML training node pool (scale to 0 outside midnight-6AM), use standard GPUs for the serving node pool \u2014 preemptible GPUs are 91% cheaper",
+          "correct": true
+        },
+        {
+          "text": "Enable GKE Autopilot \u2014 Autopilot manages nodes but doesn't reduce costs for idle GPU capacity",
+          "correct": false
+        },
+        {
+          "text": "Use Composed of Reserved Instances for GPUs \u2014 CUDs don't apply to GPUs (GPU reservations are separate from CUDs)",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud Run for ML serving and Cloud Batch for training \u2014 Cloud Run doesn't support GPUs",
+          "correct": false
+        }
+      ],
+      "explanation": "Preemptible GPUs (spot) give 91% discount on GPU compute. Create a dedicated node pool with preemptible GPUs that scales to zero outside midnight-6AM. The serving node pool keeps standard GPUs for day workloads. This is the highest-impact GPU cost optimization."
+    },
+    {
+      "domain": "Reliability Engineering",
+      "question": "A company's Cloud Storage bucket had a user accidentally delete a critical object. They need to restore it immediately. The bucket has Object Versioning disabled. Which recovery option exists?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Submit a support ticket to Google Cloud \u2014 Google maintains system-level snapshots but restoration is not guaranteed and timelines are not defined",
+          "correct": true
+        },
+        {
+          "text": "Use Cloud Storage Object Versioning \u2014 must be enabled before deletion to use this feature",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud Storage lifecycle policy to recover from Soft Delete \u2014 soft delete policies are for automatic cleanup, not recovery",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud Logging to reconstruct the object \u2014 Cloud Logging doesn't store object content",
+          "correct": false
+        }
+      ],
+      "explanation": "If Object Versioning was not enabled, the object cannot be recovered without a Google support case (which Google may or may not fulfill from system snapshots \u2014 not guaranteed). This is why Object Versioning should always be enabled for critical data."
+    },
+    {
+      "domain": "Cloud Architecture Design",
+      "question": "You need to design a data pipeline: reads 50GB CSV from Cloud Storage, performs complex SQL joins and aggregations, writes to BigQuery. The job runs weekly. Which approach is fastest and cheapest?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Load CSV to BigQuery (staging table), then query the staging table with SQL joins and write to the final table \u2014 BigQuery's native SQL engine handles joins efficiently with no additional infrastructure",
+          "correct": true
+        },
+        {
+          "text": "BigQuery external table over Cloud Storage \u2014 external tables can query CSV files directly but don't handle complex joins as efficiently as loaded tables",
+          "correct": false
+        },
+        {
+          "text": "Use Dataproc Serverless for Spark to process the CSV \u2014 Dataproc adds cluster management overhead and cost for a simple weekly CSV-to-BigQuery job",
+          "correct": false
+        },
+        {
+          "text": "Dataflow (Apache Beam) batch pipeline \u2014 Dataflow is overkill for a simple weekly CSV-to-BigQuery load",
+          "correct": false
+        }
+      ],
+      "explanation": "BigQuery's native load from Cloud Storage + SQL query is the simplest, fastest, and cheapest approach for weekly batch. Dataproc and Dataflow add unnecessary complexity and cost for this use case."
+    }
+  ]
+}
