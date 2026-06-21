@@ -1,0 +1,1236 @@
+{
+  "title": "AZ-305 \u2014 Case Study Edition",
+  "description": "50 case study questions covering migration scenarios, multi-cloud architecture decisions, and real-world enterprise situations based on the official AZ-305 case studies.",
+  "timeLimit": 75,
+  "count": 50,
+  "passingScore": 70,
+  "shuffle": true,
+  "domains": [
+    {
+      "name": "Identity & Access (Case Study)",
+      "weight": 15
+    },
+    {
+      "name": "Storage & Data (Case Study)",
+      "weight": 20
+    },
+    {
+      "name": "Compute & Migration (Case Study)",
+      "weight": 20
+    },
+    {
+      "name": "Networking (Case Study)",
+      "weight": 15
+    },
+    {
+      "name": "HA/DR & Business Continuity",
+      "weight": 15
+    },
+    {
+      "name": "Cost & Governance",
+      "weight": 15
+    }
+  ],
+  "questions": [
+    {
+      "domain": "Identity & Access (Case Study)",
+      "question": "You're designing identity for a healthcare company migrating from on-premises AD DS to Azure. They have 5,000 employees, need HIPAA compliance, and want SSO across on-prem and cloud apps. Which solution meets all requirements with least operational overhead?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Deploy Azure AD Connect cloud sync with Pass-through Authentication and enable Seamless SSO",
+          "correct": false
+        },
+        {
+          "text": "Implement Azure AD Connect with federation to an existing ADFS infrastructure, plus Conditional Access policies scoped to HIPAA-regulated workloads",
+          "correct": false
+        },
+        {
+          "text": "Migrate to Microsoft Entra ID (Azure AD) with Password Hash Sync + Seamless SSO + Entra ID Governance (PIM, Access Reviews) for HIPAA compliance",
+          "correct": true
+        },
+        {
+          "text": "Replace on-prem AD DS entirely with Microsoft Entra ID Domain Services (AAD DS) managed domain",
+          "correct": false
+        }
+      ],
+      "explanation": "Password Hash Sync with Seamless SSO gives the simplest hybrid identity without ADFS overhead. Entra ID Governance (PIM, Access Reviews) provides the HIPAA-required just-in-time access controls. Federation adds unnecessary complexity. AAD DS is for lift-and-shift legacy apps, not primary identity for employees."
+    },
+    {
+      "domain": "Identity & Access (Case Study)",
+      "question": "A financial services firm needs to grant external auditors temporary read-only access to their Azure environment for 30 days. Access must be revoked automatically, audited, and require approval. Which do you implement?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Create a dedicated guest account, assign Reader role, set AccountExpiration to 30 days",
+          "correct": false
+        },
+        {
+          "text": "Microsoft Entra ID Privileged Identity Management (PIM) with just-in-time eligible assignment + approval workflow + time-bound activation",
+          "correct": true
+        },
+        {
+          "text": "Create a service account with Reader role and share credentials via Azure Key Vault with secret rotation",
+          "correct": false
+        },
+        {
+          "text": "Use an Azure AD security group with Time-Based Access (conditional access) to grant access during business hours only",
+          "correct": false
+        }
+      ],
+      "explanation": "PIM provides JIT access with approval workflows, full audit logging, and automatic deactivation \u2014 exactly what compliance auditors need. Time-based conditional access alone doesn't provide the approval workflow or privileged access management that PIM delivers."
+    },
+    {
+      "domain": "Storage & Data (Case Study)",
+      "question": "An e-commerce company is migrating a 50TB MongoDB NoSQL database to Azure. They need sub-10ms read latency, global distribution, and automatic scaling. Which Azure database service is the best fit?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Cosmos DB for MongoDB (using MongoDB API) with multi-region write enabled and provisioned throughput",
+          "correct": false
+        },
+        {
+          "text": "Azure Cosmos DB for MongoDB (MongoDB API) with multi-region writes and serverless billing",
+          "correct": false
+        },
+        {
+          "text": "Azure Cosmos DB for MongoDB (MongoDB API) with multi-region writes + autoscale throughput + SLA-backed consistency",
+          "correct": true
+        },
+        {
+          "text": "Azure Cosmos DB Table API as a fallback since MongoDB API doesn't support multi-region writes",
+          "correct": false
+        }
+      ],
+      "explanation": "Cosmos DB MongoDB API supports multi-region writes (since API version 3.6+). Autoscale provisions throughput dynamically. This gives global distribution, sub-10ms p99 latency, and automatic scaling \u2014 all without rewriting the app's MongoDB driver. Serverless doesn't provide SLA-backed consistency guarantees."
+    },
+    {
+      "domain": "Storage & Data (Case Study)",
+      "question": "A manufacturing company has SAP running on HANA on-premises. They want to migrate to Azure with minimal code changes. Their RTO is 4 hours and RPO is 1 hour. Which migration approach and target configuration is correct?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Lift-and-shift using Azure Migrate to Mv2-series VMs with Azure Site Recovery for DR, configure async replication for 1-hour RPO",
+          "correct": false
+        },
+        {
+          "text": "Rearchitect to SAP on Azure (SAP CAL) using Azure dedicated hosts, implement SAP HANA native replication with auto-failover for <30 min RTO",
+          "correct": false
+        },
+        {
+          "text": "Lift-and-shift to Azure Large Instances (HLI) for SAP HANA \u2014 bare-metal infrastructure in Azure datacenter with SAP certification, HSR for DR",
+          "correct": true
+        },
+        {
+          "text": "Deploy SAP on GxP-compliant VMs (Ev4/Esv4-series) with Always On availability groups for high availability",
+          "correct": false
+        }
+      ],
+      "explanation": "Azure Large Instances (HLI/BI) is bare-metal SAP HANA infrastructure in Azure, certified by SAP \u2014 no hypervisor overhead, optimized for SAP. HANA System Replication (HSR) provides synchronous/asynchronous replication meeting the 1-hour RPO and <4-hour RTO. Azure Migrate is for general VMs, not certified SAP HANA. VMs can't match HLI performance for large SAP HANA databases."
+    },
+    {
+      "domain": "Compute & Migration (Case Study)",
+      "question": "A media streaming company runs 200 Windows VMs on VMware 6.5 for a web app. They want to migrate to Azure with full HA (99.99% SLA) and auto-scale based on demand. Which is the most cost-effective approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Use Azure Migrate to migrate each VM to an Availability Set with Standard ILB, deploy Scale Set on top",
+          "correct": false
+        },
+        {
+          "text": "Migrate to Azure VMware Solution (AVS) to preserve VMware tooling, add AVS HCX for live migration and vSAN for storage",
+          "correct": false
+        },
+        {
+          "text": "Refactor to App Service Environments (ASE) v3 with zone redundancy + Azure SQL Managed Instance + Front Door for global HA",
+          "correct": true
+        },
+        {
+          "text": "Lift-and-shift to VMSS with Flexible orchestration mode, enable automatic OS image updates",
+          "correct": false
+        }
+      ],
+      "explanation": "Streaming web apps map perfectly to App Service (PaaS) with zone redundancy = 99.99% SLA. ASE v3 uses dedicated infrastructure, supports Windows .NET apps, and auto-scales natively. This eliminates VMware entirely, reduces licensing costs, and provides auto-scaling that VMs can't match. AVS preserves VMware complexity. VMSS still has VM-level HA limitations."
+    },
+    {
+      "domain": "Compute & Migration (Case Study)",
+      "question": "A retail chain with 300 stores is moving from a legacy point-of-sale (POS) system to a cloud-based POS. Each store has intermittent internet (2-5 Mbps). The solution must work offline and sync when connected. Which architecture is correct?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure IoT Edge deployed at each store with local containerized POS app, sync to Azure SQL using Data Factory when online",
+          "correct": false
+        },
+        {
+          "text": "Azure Sphere hardware at each store running a lightweight POS app with Azure SQL Edge local database, sync to central SQL when connected",
+          "correct": false
+        },
+        {
+          "text": "Containerized POS app on Azure Stack HCI at store-level hub with local Azure SQL database, Azure Arc for management, sync using Data-tier App (DAC) packages",
+          "correct": true
+        },
+        {
+          "text": "Standard VMs at each store running the POS app with ExpressRoute backup connection to central datacenter",
+          "correct": false
+        }
+      ],
+      "explanation": "Azure Stack HCI gives a true hybrid model: full Windows Server app compatibility, local SQL database for offline operation, and management via Azure Arc. DAC packages handle data sync when connected. Azure Sphere is IoT-focused, not POS. IoT Edge can't run full Windows POS apps. ExpressRoute at each store is prohibitively expensive."
+    },
+    {
+      "domain": "Storage & Data (Case Study)",
+      "question": "A logistics company needs to migrate a 200TB PostgreSQL 14 database to Azure with zero-downtime migration. They require a validation step before cutover. The source is on a VM with 16 vCPUs. Which approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Use Azure Database Migration Service (DMS) with online migration mode \u2014 continuous sync from source to Azure Database for PostgreSQL Flexible Server, perform validation, then cutover",
+          "correct": true
+        },
+        {
+          "text": "Set up PostgreSQL on Azure VMs with Availability Set, use pg_dump to export, import to Azure Database for PostgreSQL Flexible Server during maintenance window",
+          "correct": false
+        },
+        {
+          "text": "Use Azure Data Factory with PostgreSQL connector for CDC-based incremental migration, validate with data quality pipeline, then redirect apps",
+          "correct": false
+        },
+        {
+          "text": "Deploy Azure Database for PostgreSQL Hyperscale (Citus) and use Azure Migrate for database migration assessment and cutover",
+          "correct": false
+        }
+      ],
+      "explanation": "DMS online migration uses logical replication (PostgreSQL logical replication slots) for continuous sync with zero downtime. You run validation queries against the target while source keeps running, then cutover with minimal DNS change. pg_dump requires downtime. Data Factory is for ETL, not live migration. Azure Migrate doesn't support PostgreSQL directly."
+    },
+    {
+      "domain": "Networking (Case Study)",
+      "question": "A multinational corporation with offices in US, EU, and APAC is deploying a 3-tier web app on Azure VMs. They need global traffic routing, TLS termination, DDoS protection, and application-layer routing. What is the minimum set of services required?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Front Door + Web Application Firewall (WAF) + Application Gateway (regional) + Standard DDoS Protection",
+          "correct": true
+        },
+        {
+          "text": "Traffic Manager + Application Gateway v2 + Azure DDoS Protection Standard + Azure Load Balancer (Standard)",
+          "correct": false
+        },
+        {
+          "text": "Azure CDN Premium + Azure Application Gateway + DDoS Protection Enterprise + Standard Load Balancer",
+          "correct": false
+        },
+        {
+          "text": "Azure Front Door (Premium) + WAF + DDoS Protection Standard only \u2014 Application Gateway redundant for VMs behind Front Door",
+          "correct": false
+        }
+      ],
+      "explanation": "Front Door provides global anycast routing + TLS termination. WAF policies attach to Front Door. Application Gateway (regional) is needed for VMs because VMs aren't natively integrated with Front Door's backend pool health probes in the same way PaaS is. DDoS Protection Standard is required for VM-level DDoS at network layer. Traffic Manager is DNS-based only (no TLS, no WAF). Front Door alone can't handle L7 routing to VM backends without an internal proxy."
+    },
+    {
+      "domain": "Networking (Case Study)",
+      "question": "A healthcare company needs to connect their on-premises datacenter to Azure via a private connection that bypasses the internet. They have an existing MPLS network and need to connect 50 Azure VMs across 3 VNets in 2 regions. Which architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "ExpressRoute with ExpressRoute Gateway, peered VNets using VNet peering, and IPsec VPN as DR failover via Virtual WAN",
+          "correct": false
+        },
+        {
+          "text": "ExpressRoute with Universal Peering (Microsoft + private), co-existence with VPN Gateway (active-active) for DR, VNet peering across regions via ExpressRoute circuit",
+          "correct": false
+        },
+        {
+          "text": "ExpressRoute with Private Peering, ExpressRoute circuit in each region, VNet-to-VNet VPN across regions for DR, VPN Gateway as failover",
+          "correct": true
+        },
+        {
+          "text": "Azure Virtual WAN with ExpressRoute connection, VPN Hub in each region, all VNets connected through SD-WAN overlay on existing MPLS",
+          "correct": false
+        }
+      ],
+      "planation": "Private Peering gives direct L3 connection to Azure VNets. Separate ExpressRoute circuits per region ensure region-level fault isolation \u2014 if one region fails, the other continues. VNet-to-VNet VPN as DR provides cross-region failover. Co-existence gateway is for VPN + ExpressRoute on the same VNet, not cross-region. Virtual WAN adds unnecessary SD-WAN complexity when MPLS already connects sites."
+    },
+    {
+      "domain": "Compute & Migration (Case Study)",
+      "question": "A software company is migrating from AWS to Azure. They have 50 AWS EC2 instances running Windows Server 2016 web apps and MS SQL Server 2019 databases. They want to retire AWS within 6 months with minimal refactoring. Which migration path?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Lift-and-shift all EC2 instances to Azure VMs using Azure Migrate, migrate SQL Server to Azure SQL Managed Instance using DMS with online migration",
+          "correct": true
+        },
+        {
+          "text": "Re-architect all Windows apps to Azure App Service and SQL Azure (PaaS) \u2014 this is the only way to eliminate licensing costs",
+          "correct": false
+        },
+        {
+          "text": "Use AWS Application Migration Service (MGN) to replicate directly into Azure VMs as a lift-and-shift, then switch to Azure-native services over 2 years",
+          "correct": false
+        },
+        {
+          "text": "Migrate EC2 to Azure VMware Solution to preserve Windows Server tooling, use Azure Arc for management",
+          "correct": false
+        }
+      ],
+      "planation": "Azure Migrate supports AWS as a source (agentless discovery, then replication to Azure VMs). DMS online migration handles SQL Server to Managed Instance with near-zero downtime. This achieves the 6-month retirement target without the risk of a full re-architecture. Azure Migrate is the correct tool for cross-cloud lift-and-shift. AVS is for VMware-specific environments."
+    },
+    {
+      "domain": "HA/DR & Business Continuity",
+      "question": "A financial trading platform requires RPO = 0 and RTO < 5 minutes for its trading database. Data must never be lost, even during Azure region failures. Which architecture meets this with minimum cost?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure SQL Database Premium with Active-Geo-Replication (secondary in paired region) + Auto-failover group \u2014 RPO=0, RTO < 30 seconds",
+          "correct": false
+        },
+        {
+          "text": "SQL Server Always On Availability Groups across 3 availability zones in primary region + Async replica in secondary region for DR, zone-redundant SQL MI",
+          "correct": false
+        },
+        {
+          "text": "Azure SQL Managed Instance with instance failover groups (auto-failover, RPO=0) \u2014 primary in one region, secondary in paired region",
+          "correct": true
+        },
+        {
+          "text": "Azure SQL Database Hyperscale with read-scale replica in secondary region \u2014 RPO near zero, RTO dependent on failover configuration",
+          "correct": false
+        }
+      ],
+      "planation": "Managed Instance failover groups provide automatic failover with RPO=0 (uses synchronous replication within the failover group). This is the simplest solution requiring no app-level witness configuration. RTO is under 30 seconds. Premium PAXGeo is for single databases, not enterprise trading platforms. AGs across zones are for zone-level HA, not region-level DR."
+    },
+    {
+      "domain": "HA/DR & Business Continuity",
+      "question": "A global e-commerce site runs on Azure App Service with Azure SQL Database. During the holiday season, they experienced 3-hour outages due to a regional Azure disruption. They need a DR solution that handles regional failures with <1 hour RTO. Which is correct?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Deploy App Service to two regions (primary + DR), use Azure Traffic Manager (priority mode) for failover, SQL Database active geo-replication to DR region",
+          "correct": true
+        },
+        {
+          "text": "Use App Service Environment v3 with zone redundancy in primary region + Azure SQL Managed Instance with auto-failover group to DR region",
+          "correct": false
+        },
+        {
+          "text": "Deploy Azure Front Door Premium with Azure CDN for static content and Azure SQL Hyperscale with read replica in DR region",
+          "correct": false
+        },
+        {
+          "text": "Use Azure Site Recovery to replicate App Service to DR region, manually trigger failover when primary fails",
+          "correct": false
+        }
+      ],
+      "planation": "Traffic Manager with priority routing + SQL geo-replication gives automatic DNS failover with <1 hour RTO. App Service is stateless so it can be deployed to multiple regions easily. Traffic Manager health checks detect primary region failure and fail over. ASR is for VMs and is too slow for <1 hour RTO."
+    },
+    {
+      "domain": "Storage & Data (Case Study)",
+      "question": "A media company needs to store 100PB of raw video footage with 99.999999999% durability, global access, and the ability to process frames with Azure Batch. Which storage and processing architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Data Lake Storage Gen2 (hierarchical namespace) with ZRS in primary region, GRS for DR, Azure Batch for processing with MountJob to blob containers",
+          "correct": false
+        },
+        {
+          "text": "Azure Data Lake Storage Gen2 with ZRS, lifecycle tiering to Cool/Archive, Azure Batch with AutoPool (Job Manager + Compute Nodes) mounting blob via Azure Files NFS",
+          "correct": false
+        },
+        {
+          "text": "Azure Data Lake Storage Gen2 with ZRS enabled, lifecycle policy moving cold data to Archive Storage, Azure Batch pools using MassData framework mounting ADLS Gen2 via Blobfuse",
+          "correct": false
+        },
+        {
+          "text": "Azure Data Lake Storage Gen2 with ZRS, MountJob in Azure Batch to attach ADLS Gen2 containers directly to compute nodes for parallel frame processing",
+          "correct": true
+        }
+      ],
+      "planation": "ADLS Gen2 with ZRS gives 16 9's durability within a region. Azure Batch MountJob directly attaches blob containers to compute nodes \u2014 no intermediate Azure Files needed. Lifecycle tiering moves old footage to Archive. This avoids Blobfuse performance issues and NFS complexity."
+    },
+    {
+      "domain": "Storage & Data (Case Study)",
+      "question": "A hospital is migrating from on-premises Oracle RAC to Azure. They need to maintain Oracle compatibility for a custom ERP app that can't be refactored. Performance is critical. Which option?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure VMs with Oracle RAC using Azure Ultra Disks for shared storage, Availability Zones for HA",
+          "correct": false
+        },
+        {
+          "text": "Azure Database for Oracle (Oracled at Azure) \u2014 Oracle's managed database on Azure infrastructure",
+          "correct": false
+        },
+        {
+          "text": "Azure VMware Solution (AVS) with Oracle RAC on vSAN \u2014 preserves Oracle RAC architecture with Azure management layer",
+          "correct": true
+        },
+        {
+          "text": "Lift-and-shift Oracle to Azure Large Instances for Oracle (bare-metal) with Oracle Data Guard for DR",
+          "correct": false
+        }
+      ],
+      "planation": "AVS with Oracle RAC on vSAN preserves the shared-disk architecture that Oracle RAC requires, while eliminating the customer's need to manage VMware infrastructure. It's VMware-certified for Oracle RAC. Azure Ultra Disks don't support shared access required for RAC. Large Instances for Oracle is also bare-metal but is Oracle-specific rather than a general VMware platform."
+    },
+    {
+      "domain": "Networking (Case Study)",
+      "question": "A SaaS company has multi-tenant apps in Azure. Each tenant's data must be logically isolated \u2014 no cross-tenant data access even from the same app service. The app uses a shared App Service Plan. Which isolation model is correct?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Use per-tenant Azure AD tenant (Microsoft Entra ID) with token-based authentication \u2014 the app validates tokens and queries tenant-specific data",
+          "correct": false
+        },
+        {
+          "text": "Deploy a separate App Service Environment (ASE) v3 per tenant \u2014 each ASE is in its own VNet with private endpoints for databases",
+          "correct": false
+        },
+        {
+          "text": "Deploy each tenant's app to its own App Service Plan (isolated SKU) with VNet integration + Azure SQL with per-tenant database + Row-Level Security (RLS) for logical separation",
+          "correct": false
+        },
+        {
+          "text": "Use ASE v3 (Isolated tier) with internal Load Balancer, deploy a shared app hosting multiple tenants, use per-tenant Azure SQL with RLS + VNet + private endpoints for true isolation",
+          "correct": true
+        }
+      ],
+      "planation": "ASE v3 Isolated provides dedicated compute and network isolation per tenant category. Per-tenant databases with RLS ensures logical data isolation even within the same SQL server. VNet integration + private endpoints prevent any cross-tenant network communication. Shared App Service Plan = no isolation."
+    },
+    {
+      "domain": "Compute & Migration (Case Study)",
+      "question": "A manufacturing company runs SCADA systems on Windows Server 2012 R2 VMs. They want to migrate to Azure but SCADA vendor support requires the systems to remain on the same hypervisor version. Which is the correct approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Migrate to Azure VMware Solution (AVS) \u2014 AVS runs on VMware vSphere and maintains hypervisor version consistency while providing Azure-native management",
+          "correct": true
+        },
+        {
+          "text": "Use Azure Migrate to migrate to Azure VMs, upgrade SCADA systems to a supported version post-migration",
+          "correct": false
+        },
+        {
+          "text": "Deploy Azure Stack HCI at the factory, run SCADA VMs on-premises with Azure Arc management and intermittent cloud sync",
+          "correct": false
+        },
+        {
+          "text": "Re-host on Azure VMs using Generation 1 VMs to maintain BIOS-level compatibility with SCADA software licensing",
+          "correct": false
+        }
+      ],
+      "planation": "AVS runs VMware ESXi on Azure bare-metal \u2014 SCADA vendor support for specific hypervisor versions is preserved. Azure Arc would require re-architecting to a hybrid management model. Azure Migrate can't preserve hypervisor versions. Azure Stack HCI moves the problem on-premises."
+    },
+    {
+      "domain": "Cost & Governance",
+      "question": "A tech startup has 50 Linux VMs running web apps on Azure. Monthly spend is $15,000. Development team is 8 people, operations team is 2. They need to cut costs by 40% without major re-architecture. Which is most impactful first?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Convert all VMs to Azure Reserved Virtual Machine Instances (1-year) for Compute Engine savings \u2014 up to 72% vs pay-as-you-go",
+          "correct": false
+        },
+        {
+          "text": "Enable Azure Hybrid Benefit for all VMs (Linux AHUB = 2x VMs per license), migrate suitable VMs to Spot (dev/test), enable auto-shutdown for dev VMs",
+          "correct": true
+        },
+        {
+          "text": "Replace all VMs with Azure App Service (Consumption plan) for pay-per-use model \u2014 scales to zero when not in use",
+          "correct": false
+        },
+        {
+          "text": "Downsize all VMs to the smallest size that passes performance testing, purchase 3-year reserved instances",
+          "correct": false
+        }
+      ],
+      "planation": "Azure Hybrid Benefit for Linux is free \u2014 each Windows Server license with SA covers 2x the VMs on Azure. Spot for dev/test VMs (typically off-hours) saves up to 91%. Auto-shutdown kills dev VMs after hours. These are immediate wins with zero re-architecture. Reserved instances lock in the current (potentially oversized) VM count."
+    },
+    {
+      "domain": "Cost & Governance",
+      "question": "An enterprise with 500 Azure subscriptions (one per department) needs to enforce tagging for cost allocation: all resources must have 'Department' and 'CostCenter' tags. Non-compliant resources should be blocked from creation. Which Azure policy?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Apply an Azure Policy with 'Append' effect at the Management Group level \u2014 adds default tags to all resources during creation",
+          "correct": false
+        },
+        {
+          "text": "Apply an Azure Policy with 'Deny' effect at the Management Group level targeting Microsoft.Resources/resources \u2014 requires Department and CostCenter tags or creation fails",
+          "correct": true
+        },
+        {
+          "text": "Use Azure Policy with 'Audit' effect to detect non-compliant resources, then run Automation runbooks to auto-remediate tags on non-compliant resources",
+          "correct": false
+        },
+        {
+          "text": "Apply 'DeployIfNotExists' policy at subscription level to deploy a policy assignment that enforces tags \u2014 this automatically remediates existing non-compliant resources",
+          "correct": false
+        }
+      ],
+      "planation": "Deny effect at Management Group level blocks non-compliant resource creation org-wide \u2014 this is enforcement, not just detection. Append adds tags but doesn't block creation of untagged resources. Audit + remediation is reactive. DeployIfNotExists can remediate but doesn't block creation."
+    },
+    {
+      "domain": "Identity & Access (Case Study)",
+      "question": "A retail company with 2,000 stores uses Azure to manage in-store kiosks (IoT devices running Windows IoT). Each store needs its kiosks to authenticate to Azure resources without per-device credentials. Which identity solution?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Create one Azure AD service principal per store, store the client secret in Azure Key Vault, apps retrieve at runtime",
+          "correct": false
+        },
+        {
+          "text": "Use Microsoft Entra ID Workload Identities (federated identity) \u2014 federate a Kubernetes service account in Azure Arc to an Azure AD app",
+          "correct": false
+        },
+        {
+          "text": "Use Azure AD managed identities \u2014 enable System-assigned managed identity on each kiosk's VM, grant minimal RBAC roles",
+          "correct": false
+        },
+        {
+          "text": "Use Microsoft Entra ID (Azure AD) managed identities with System-assigned identity on each kiosk VM, use Azure Key Vault SDK to access secrets \u2014 no credentials stored on device",
+          "correct": true
+        }
+      ],
+      "planation": "System-assigned managed identities eliminate credentials on devices entirely \u2014 Azure manages the identity. Key Vault access via MSI provides secrets without storing credentials on the kiosk. Workload identities are for Kubernetes (AKS). Service principals with secrets in Key Vault still require app code to retrieve credentials \u2014 and if the KV secret changes, devices break."
+    },
+    {
+      "domain": "Compute & Migration (Case Study)",
+      "question": "A defense contractor needs to migrate a classified workload to Azure Government. The workload requires IL4 (Impact Level 4) compliance, FedRAMP High DADs, and US persons only access. Which solution meets all requirements?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Government ( sovereign cloud ) with Azure Government Top Secret region, Azure AD Government, and IL4-attested services including Azure Virtual Machines, Azure SQL, and Azure Government Kubernetes Service (AKS)",
+          "correct": false
+        },
+        {
+          "text": "Azure Government (public sovereign cloud) \u2014 all IL4-attested services including AKS, Cosmos DB, and Blob Storage \u2014 with Conditional Access restricting access to US persons via IP and Group membership",
+          "correct": true
+        },
+        {
+          "text": "Azure Top Secret cloud with IL5-attested AKS, Azure Government Kubernetes Service, and Azure confidential computing (DCsv2 VMs) for classified data",
+          "correct": false
+        },
+        {
+          "text": "Azure Government with Azure Stack HCI deployed in a government facility \u2014 provides air-gapped IL4-compliant infrastructure with Azure Arc management",
+          "correct": false
+        }
+      ],
+      "planation": "Azure Government is the IL4-compliant sovereign cloud for defense workloads. IL4-attested services (AKS, Cosmos, Blob) are approved for IL4. Conditional Access with US geo-location + group membership enforces US persons-only access. Top Secret regions are for classified data above IL4. Air-gap defeats the purpose of cloud migration."
+    },
+    {
+      "domain": "Storage & Data (Case Study)",
+      "question": "A genomics research institute processes terabytes of DNA sequencing data. They need high-throughput blob storage (50,000 IOPS), POSIX-compliant access from Linux compute nodes (Azure Batch), and the ability to use standard Linux tools (rsync, HPC IO libraries). Which storage?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Blob Storage with Premium tier (LRS) + Azure Batch with CloudStorageDiskConfiguration \u2014 provides high IOPS but limited POSIX support",
+          "correct": false
+        },
+        {
+          "text": "Azure NetApp Files (ANF) with Premium tier \u2014 POSIX-compliant NFS mounts directly to Linux Batch nodes, handles 50K+ IOPS, supports rsync and all Linux tools natively",
+          "correct": true
+        },
+        {
+          "text": "Azure Data Lake Storage Gen2 with hierarchical namespace + BlobFuse mount on Linux nodes \u2014 supports standard file tools",
+          "correct": false
+        },
+        {
+          "text": "Azure HPC Cache (now Azure Elastic SAN) with Parallel NFS access \u2014 purpose-built for HPC workloads with POSIX compliance",
+          "correct": false
+        }
+      ],
+      "planation": "Azure NetApp Files provides POSIX-compliant NFSv3/v4.1 mounts directly to Linux VMs \u2014 rsync, HPC IO libraries, and all standard Linux tools work without modification. ANF Premium handles 50K+ IOPS. BlobFuse is FUSE-based (less stable, doesn't support all HPC IO patterns). HPC Cache is for HPC short-term burst scenarios."
+    },
+    {
+      "domain": "HA/DR & Business Continuity",
+      "question": "A SaaS company needs to test DR scenarios quarterly without impacting production. They need to spin up a DR environment in under 30 minutes with the latest production data. Which approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Use Azure Site Recovery with replication set to DR region \u2014 during DR drills, perform a test failover which creates isolated VMs without impacting production",
+          "correct": true
+        },
+        {
+          "text": "Use Azure Backup with instant restore to create a point-in-time copy, provision new VMs from the restored disk \u2014 test fails due to SID conflicts",
+          "correct": false
+        },
+        {
+          "text": "Use Azure SQL Database geo-restore to provision a DR copy \u2014 available within 1 hour, not suitable for quarterly testing",
+          "correct": false
+        },
+        {
+          "text": "Maintain a warm standby DR environment with Azure SQL Managed Instance auto-failover groups \u2014 too expensive for quarterly testing",
+          "correct": false
+        }
+      ],
+      "planation": "ASR test failover creates an isolated network in the DR region \u2014 VMs boot from replicated disks without affecting production replication. It's the standard way to do DR drills. Backup/restore is too slow. Warm standby is for actual DR, not testing."
+    },
+    {
+      "domain": "Networking (Case Study)",
+      "question": "A retail company with 500 stores uses Azure for POS traffic. Each store has an Azure VPN Gateway for secure POS data to Azure SQL. As they scale to 2,000 stores, per-store VPN Gateways become expensive. Which architecture scales better?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Deploy Virtual WAN with VPN sites \u2014 each store connects via Virtual WAN SD-WAN partner device, significantly reduces per-store cost at scale",
+          "correct": true
+        },
+        {
+          "text": "Migrate each store to ExpressRoute \u2014 gives dedicated bandwidth and lower latency but requires physical connectivity to an ExpressRoute partner",
+          "correct": false
+        },
+        {
+          "text": "Replace VPN with Azure Relay (Hybrid Connections) \u2014 POS apps connect outbound to Azure, no inbound firewall changes needed",
+          "correct": false
+        },
+        {
+          "text": "Deploy a global Azure Firewall Manager policy with Azure Firewall Premium at hub regions \u2014 route all store traffic through central firewall",
+          "correct": false
+        }
+      ],
+      "planation": "Virtual WAN with SD-WAN partner devices at each store dramatically reduces per-store cost at scale \u2014 one vWAN hub per region vs 500 individual VPN Gateways. Azure Relay requires app code changes. ExpressRoute needs physical connectivity (not available at all store locations). Central Firewall works but doesn't replace the need for site-to-cloud connectivity."
+    },
+    {
+      "domain": "Compute & Migration (Case Study)",
+      "question": "A game studio is migrating a real-time game server (Unreal Engine, 50GB stateful sessions, 500 players per server) to Azure. They need to scale out/in dynamically based on player count. Which compute + state management?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Container Instances (ACI) with StatefulSets pattern \u2014 persistent disk storage per container, integrate with AKS for orchestration",
+          "correct": false
+        },
+        {
+          "text": "Azure CycleCloud with HPC VMs (H-series) for game server workloads \u2014 native support for stateful MPI/HPC applications with job scheduling",
+          "correct": false
+        },
+        {
+          "text": "Azure Virtual Machine Scale Sets (Flexible orchestration) with a Redis cache layer (Azure Cache for Redis Enterprise) for session state, Azure NetApp Files for persistent game state",
+          "correct": true
+        },
+        {
+          "text": "App Service with Azure SignalR Service for WebSocket-based real-time communication \u2014 scales automatically but doesn't support stateful game servers",
+          "correct": false
+        }
+      ],
+      "planation": "VMSS Flexible with Enterprise Redis handles stateful game servers \u2014 Redis stores session state (player inventory, position), NetApp Files handles persistent game world state. This gives the scale-out capability with a dedicated state layer. ACI doesn't support the performance needed for 500 concurrent players per server. CycleCloud is for batch HPC."
+    },
+    {
+      "domain": "Identity & Access (Case Study)",
+      "question": "A multinational uses Azure AD Connect with federation to their on-prem ADFS. They want to simplify by eliminating ADFS, improve resilience, and reduce on-premises dependency. Which is the correct migration path?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Enable Azure AD Connect with Password Hash Sync + Seamless SSO first (staged rollout), validate all apps work with modern auth, then decommission ADFS gradually app by app",
+          "correct": true
+        },
+        {
+          "text": "Replace ADFS with Active Directory Federation Services in Azure (AVM template) \u2014 cloud-hosted but still federation-based",
+          "correct": false
+        },
+        {
+          "text": "Move all users to a new Azure AD tenant with federated authentication to a new ADFS farm in Azure \u2014 no on-prem dependency",
+          "correct": false
+        },
+        {
+          "text": "Deploy Azure AD Application Proxy for all on-prem apps and use Pass-through Authentication \u2014 eliminates ADFS for app access only",
+          "correct": false
+        }
+      ],
+      "planation": "PHS + Seamless SSO migration is the documented Microsoft path from federation to cloud identity. Staged rollout means you validate each app's modern auth compatibility before cutting over. ADFS in Azure still has the same complexity. New tenant = massive disruption. App Proxy only covers web apps, not all ADFS relying parties."
+    },
+    {
+      "domain": "Cost & Governance",
+      "question": "An enterprise has 50 Azure subscriptions under a Management Group hierarchy. They need to enforce a policy that all storage accounts must use Azure Storage Explorer (no direct keys), and block any storage account created without Hierarchical Namespace (Azure Data Lake). Which policy?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Two separate Azure Policies at the Management Group: (1) Deny for Microsoft.Storage/storageAccounts without enabledHierarchicalNamespace, (2) DeployIfNotExists to configure Azure AD role-based access for Storage Explorer",
+          "correct": false
+        },
+        {
+          "text": "One Azure Policy with Deny effect targeting Microsoft.Storage/storageAccounts \u2014 denies creation if the storage account doesn't have hierarchical namespace AND doesn't use Azure AD authentication",
+          "correct": true
+        },
+        {
+          "text": "Use an Azure Blueprint to assign both storage policy and RBAC role assignment \u2014 blueprints can enforce both deny and role assignments together",
+          "correct": false
+        },
+        {
+          "text": "Apply Azure Defender for Storage which automatically detects non-compliant configurations and applies remediation",
+          "correct": false
+        }
+      ],
+      "planation": "A single policy with conditions checking both hierarchical namespace AND Azure AD authentication (via allowAzureADFileOperationsImplied) denies storage accounts that don't meet both criteria. Deny effect blocks creation of non-compliant resources. DeployIfNotExists can't enforce deny. Blueprints are for assignment, not enforcement logic. Defender is detection, not prevention."
+    },
+    {
+      "domain": "Compute & Migration (Case Study)",
+      "question": "A company migrates a stateless .NET web app from on-premises IIS to Azure App Service. The app uses MSMQ (Microsoft Message Queue) on Windows Server. How do you handle the message queue in Azure?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Replace MSMQ with Azure Service Bus \u2014 the recommended fully managed message broker, supports dead-letter queues, sessions, and transactions",
+          "correct": true
+        },
+        {
+          "text": "Deploy MSMQ on an Azure VM (DSv2 series) with internal Load Balancer \u2014 preserves existing MSMQ code",
+          "correct": false
+        },
+        {
+          "text": "Use Azure Event Hubs for message queuing \u2014 provides higher throughput than Service Bus for this use case",
+          "correct": false
+        },
+        {
+          "text": "Configure Azure Queue Storage with the same MSMQ REST API wrapper \u2014 Azure Storage queues support the same API surface",
+          "correct": false
+        }
+      ],
+      "planation": "Service Bus is the direct replacement for MSMQ \u2014 it supports queues, sessions, dead-letter queues, and transactions. App code change required (ServiceBus SDK instead of MSMQ), but this is a small refactor. VM-hosted MSMQ defeats the PaaS goal. Event Hubs is for event streaming, not message queuing. Storage queues don't support the MSMQ API."
+    },
+    {
+      "domain": "Storage & Data (Case Study)",
+      "question": "A bank is migrating from an on-premises Cassandra cluster (50 nodes, 200TB) to Azure. They need global distribution, linear scalability, and 99.99% availability. The app uses CQL (Cassandra Query Language). Which database?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Cosmos DB for Apache Cassandra (Cassandra API) \u2014 provides CQL compatibility, global distribution, auto-scale, and 99.99% SLA with 5 consistency models",
+          "correct": true
+        },
+        {
+          "text": "Azure Cosmos DB for Table API as a Cassandra alternative \u2014 similar but uses different API, not CQL-compatible",
+          "correct": false
+        },
+        {
+          "text": "Deploy Cassandra on Azure Virtual Machine Scale Sets with managed disks \u2014 requires customer-managed cluster, no Azure SLA on the Cassandra layer",
+          "correct": false
+        },
+        {
+          "text": "Azure Database for Apache Cassandra (managed service) \u2014 fully managed Cassandra on Azure, but currently in preview and not available in all regions",
+          "correct": false
+        }
+      ],
+      "planation": "Cosmos DB Cassandra API accepts CQL queries natively \u2014 existing Cassandra drivers and code work with minimal changes. Global distribution, automatic scaling, and 99.99% SLA are included. VM-based Cassandra has no Azure SLA at the DB layer. Table API is a different API."
+    },
+    {
+      "domain": "Networking (Case Study)",
+      "question": "A manufacturing company has OT (Operational Technology) devices on an isolated on-premises network that must never be directly connected to the internet. They need to send IoT telemetry to Azure for analytics. Which is the most secure architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Deploy Azure IoT Edge gateway in the DMZ between OT network and Azure \u2014 IoT Edge device acts as field gateway, sends data via IoT Hub",
+          "correct": true
+        },
+        {
+          "text": "Use Azure Sphere Guardian modules to connect OT devices to Azure \u2014 Guardian module provides hardware-backed security and gateway functionality",
+          "correct": false
+        },
+        {
+          "text": "Configure a site-to-site VPN from the OT network to Azure VNet, open IoT Hub ingress on port 8883 \u2014 allows direct IoT Hub connectivity from OT",
+          "correct": false
+        },
+        {
+          "text": "Use Azure Event Hubs with Kafka support \u2014 OT devices publish directly to Event Hubs via AMQP through the corporate firewall",
+          "correct": false
+        }
+      ],
+      "planation": "IoT Edge field gateway is deployed in the DMZ, bridges the OT (air-gapped) network to Azure via IoT Hub's DPS. OT devices never have direct network access to Azure. Azure Sphere is for new IoT devices, not legacy OT. VPN exposes the OT network. Direct Event Hubs publish requires opening firewall ports from OT to cloud."
+    },
+    {
+      "domain": "HA/DR & Business Continuity",
+      "question": "A healthcare company has a critical app on Azure VMs with a 15-minute RTO. They've configured Availability Sets (2 fault domains, 5 update domains). During a planned Azure maintenance event, all VMs in Fault Domain 1 become unavailable simultaneously. Why?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Availability Sets with 2 fault domains means each VM is in its own FD \u2014 if Azure takes down one FD for maintenance, all VMs in that FD are rebooted",
+          "correct": false
+        },
+        {
+          "text": "Availability Sets only protect against unplanned Azure hardware failures \u2014 they don't provide protection during planned maintenance events",
+          "correct": false
+        },
+        {
+          "text": "Availability Zones should have been used \u2014 each VM in a different AZ is isolated from planned maintenance events in other AZs",
+          "correct": true
+        },
+        {
+          "text": "The VMs should have been deployed across 3 fault domains (maximum) to align with Azure maintenance domains",
+          "correct": false
+        }
+      ],
+      "planation": "Availability Zones provide physical isolation \u2014 maintenance events happen per AZ, not across all VMs in an FD. With Availability Sets (FDs/UDFs), VMs in the same FD share infrastructure that Azure takes down during maintenance. This is exactly why Availability Zones exist \u2014 to handle planned maintenance. 2 FDs is insufficient for modern HA requirements."
+    },
+    {
+      "domain": "Compute & Migration (Case Study)",
+      "question": "A company is migrating a 3-tier Oracle e-Business Suite to Azure. The app requires Oracle e-Business Suite specific shared disk clustering (Oracle Clusterware/ASMLib on Linux). Which target is correct?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure VMs with Oracle RAC on Azure Ultra Disks using raw device mappings (RDMs) \u2014 supports Oracle Clusterware but Ultra Disks have IOPS limits",
+          "correct": false
+        },
+        {
+          "text": "Azure Large Instances for Oracle \u2014 bare-metal Oracle infrastructure in Azure datacenter, pre-certified for Oracle E-Business Suite with Oracle Clusterware, ASMLib, and Oracle RAC",
+          "correct": true
+        },
+        {
+          "text": "Azure VMware Solution with Oracle RAC on vSAN \u2014 supports Oracle E-Business Suite but vSAN add latency that violates Oracle's certification requirements",
+          "correct": false
+        },
+        {
+          "text": "Lift-and-shift Oracle E-Business Suite to Azure VMs with Premium SSD managed disks in an Availability Set \u2014 simplest migration path",
+          "correct": false
+        }
+      ],
+      "planation": "Azure Large Instances for Oracle includes Oracle-specific bare-metal servers pre-certified for Oracle E-Business Suite. ASMLib and Oracle Clusterware are supported. The RDM approach with Ultra Disks adds latency that breaks Oracle RAC certification. vSAN latency similarly violates Oracle's IO stack requirements."
+    },
+    {
+      "domain": "Storage & Data (Case Study)",
+      "question": "A media company stores 5PB of video assets in Azure Blob Storage (Hot tier). 60% of the data hasn't been accessed in 3 years but must be retained for compliance. 40% is actively used. How do you optimize storage cost?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Set lifecycle policy: move blobs not accessed in 90 days to Cool tier; after 1 year to Archive tier; enable blob-level immutability for compliance",
+          "correct": false
+        },
+        {
+          "text": "Move all 5PB to Archive tier immediately \u2014 Archive is cheapest and compliance doesn't mandate hot/cool access",
+          "correct": false
+        },
+        {
+          "text": "Use Blob Storage lifecycle management: transition blobs not accessed in 90 days to Cool tier (30-day minimum), after 180 days to Archive tier. Set blob immutability policies (WORM) for compliance-required assets.",
+          "correct": true
+        },
+        {
+          "text": "Create separate storage accounts: active assets on Hot tier, inactive on Cool tier. Manually move data between tiers based on quarterly access review.",
+          "correct": false
+        }
+      ],
+      "planation": "Lifecycle policy with 90-day \u2192 Cool \u2192 180-day \u2192 Archive optimizes cost automatically. Immutability policies (WORM) are the Azure-native way to meet compliance retention requirements without manual intervention. Archive immediately is wrong because rehydration costs are significant. Manual tiering is operationally expensive at 5PB."
+    },
+    {
+      "domain": "Networking (Case Study)",
+      "question": "A retail company runs a multi-tenant SaaS on Azure VMs with shared App Service Plans per customer tier (Bronze/Silver/Gold). A Gold tier customer reports their app latency spikes when Bronze tier customers have peak load. Which fix?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Move each App Service Plan to a separate VNet, implement Network Security Groups to isolate traffic between tiers",
+          "correct": false
+        },
+        {
+          "text": "Upgrade to Isolated App Service Plan (ASE v3) for the Gold tier \u2014 dedicated compute resources that are completely isolated from other tenants' workloads",
+          "correct": true
+        },
+        {
+          "text": "Add Front Door with caching enabled for Gold tier customers \u2014 serves content from CDN edge, bypassing shared App Service",
+          "correct": false
+        },
+        {
+          "text": "Deploy Azure Application Gateway in front of the App Service with per-tier backend pools and path-based routing",
+          "correct": false
+        }
+      ],
+      "planation": "ASE v3 Isolated gives dedicated compute (separate App Service Environment) \u2014 no noisy neighbor effect from other tenants. Standard/Premium App Service Plans share resources even with per-tenant App Service Plans. Front Door caching doesn't fix noisy neighbor on dynamic app requests. NSGs don't help with compute contention."
+    },
+    {
+      "domain": "Compute & Migration (Case Study)",
+      "question": "A company is migrating a stateful Java app (WebSphere Application Server) from on-premises to Azure. The app requires WebSphere ND (Network Deployment) clustering with 4 nodes sharing session state in-memory. Which migration approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Migrate to Azure App Service with Redis session state provider \u2014 refactor Java app to remove WebSphere dependencies, use Spring Session with Redis",
+          "correct": false
+        },
+        {
+          "text": "Deploy Azure VMware Solution (AVS) with WebSphere ND cluster on vSAN \u2014 preserves clustering architecture, AVS HCX for live migration from on-premises vSphere",
+          "correct": true
+        },
+        {
+          "text": "Deploy WebSphere ND on Azure VMs with Azure NetApp Files for shared storage, configure WebSphere dynamic cache with distributed map using WAS edge",
+          "correct": false
+        },
+        {
+          "text": "Use Azure Spring Enterprise (App Server alternative) \u2014 migrate to Spring Boot microservices on Azure Spring Apps, decouple session state to Redis",
+          "correct": false
+        }
+      ],
+      "planation": "AVS preserves the existing WebSphere ND clustering topology during migration \u2014 HCX enables live vMotion from on-premises vSphere. This is a true lift-and-shift for complex Java middleware. NetApp Files requires WAS configuration changes. Spring migration is re-architecting, not migrating. Azure Spring Apps is for Spring Boot, not WebSphere."
+    },
+    {
+      "domain": "Storage & Data (Case Study)",
+      "question": "A logistics company has 1,000 IoT trucks sending GPS telemetry (5KB per message, every 30 seconds) to Azure. They need real-time route optimization and historical analytics. Which data pipeline?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "IoT Hub \u2192 Stream Analytics \u2192 Azure Cosmos DB (for real-time) + Azure Data Lake Gen2 (for historical) \u2014 Stream Analytics can output to multiple sinks simultaneously",
+          "correct": true
+        },
+        {
+          "text": "IoT Hub \u2192 Azure Functions (Event Hub trigger) \u2192 Cosmos DB (real-time) + Data Factory (historical) \u2014 Data Factory handles batch load for analytics",
+          "correct": false
+        },
+        {
+          "text": "IoT Central with data export to Event Hubs \u2192 Databricks Streaming \u2192 Delta Lake \u2014 IoT Central manages devices, export pipeline handles the rest",
+          "correct": false
+        },
+        {
+          "text": "IoT Hub \u2192 Service Bus Queue \u2192 Azure Batch \u2192 Blob Storage \u2014 simple queue-based architecture for intermittent processing",
+          "correct": false
+        }
+      ],
+      "planation": "IoT Hub ingests truck telemetry. Stream Analytics (now Azure Stream Analytics or potentially Synapse Spark Streaming) writes real-time data to Cosmos DB for route optimization queries and simultaneously archives to ADLS Gen2 for historical analytics. Dual-output streaming is the standard IoT pattern. Functions + Data Factory adds unnecessary complexity."
+    },
+    {
+      "domain": "HA/DR & Business Continuity",
+      "question": "An online gaming company has a game backend on Azure VMs (stateful, 50ms latency requirement). They experienced a 2-hour outage when an Azure region failed. They want multi-region HA with automatic failover and <5 minute RTO. Which architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Deploy Azure Load Balancer (Standard) with two regional backends, use Traffic Manager (priority) for cross-region failover, deploy VMs in Availability Zones in each region",
+          "correct": false
+        },
+        {
+          "text": "Deploy Azure VMs with Azure Site Recovery configured for multi-region DR \u2014 ASR orchestrates failover automatically based on health probes",
+          "correct": false
+        },
+        {
+          "text": "Deploy a global Azure Load Balancer (Premium) with two regional backend pools, VMs in Availability Zones per region, use Azure SQL Managed Instance with failover groups for stateful game DB",
+          "correct": true
+        },
+        {
+          "text": "Use Cosmos DB with multi-region writes for game state \u2014 Cosmos DB handles geo-replication automatically, deploy game server VMs in a single region with ASR to secondary",
+          "correct": false
+        }
+      ],
+      "planation": "Global LB Premium with zone-redundant VMs (primary region) + zone-redundant SQL MI with failover groups gives <5 min RTO with automatic failover. Traffic Manager can't handle stateful workloads \u2014 it only routes DNS. ASR takes 15-60 min to failover. Cosmos DB multi-region writes is for globally distributed apps, not a complete game backend HA solution."
+    },
+    {
+      "domain": "Networking (Case Study)",
+      "question": "A government agency has apps in Azure Government (IL4) that must communicate with a SaaS provider's commercial API endpoint (public internet). Security policy prohibits direct internet egress from the IL4 environment. How do you enable this securely?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Deploy Azure Firewall Premium with TLS inspection in the IL4 VNet \u2014 decrypts, inspects, and re-encrypts outbound traffic to the commercial SaaS API",
+          "correct": true
+        },
+        {
+          "text": "Use Azure Private Link to connect to the SaaS provider's private endpoint \u2014 Private Link provides private access to PaaS services, not internet SaaS endpoints",
+          "correct": false
+        },
+        {
+          "text": "Configure a user-defined route (UDR) to route all internet traffic through the agency's on-premises DMZ via ExpressRoute \u2014 requires physical connectivity",
+          "correct": false
+        },
+        {
+          "text": "Deploy Azure Application Gateway v2 with WAF in the IL4 VNet \u2014 provides outbound proxy for internet-bound traffic",
+          "correct": false
+        }
+      ],
+      "planation": "Azure Firewall Premium with TLS inspection (IDPS + URL filtering) decrypts outbound traffic, inspects it against security policies, and re-encrypts before forwarding. This is the compliant way to inspect and route controlled IL4 outbound traffic to commercial SaaS. Private Link doesn't work for internet SaaS providers. On-premises DMZ routing requires dedicated connectivity. App Gateway v2 doesn't provide the same TLS inspection capabilities as Firewall Premium."
+    },
+    {
+      "domain": "Compute & Migration (Case Study)",
+      "question": "A company is retiring an on-premises data center and needs to migrate 300 VMs with complex network dependencies (100s of firewall rules, load balancers, VPN connections). Which Azure Migrate capability is designed for this scenario?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Migrate discovery and assessment \u2014 maps dependencies between VMs, visualizes network topology, generates sizing recommendations",
+          "correct": false
+        },
+        {
+          "text": "Azure Migrate with Agentless Dependency Visualization \u2014 maps network connections between VMs and external services without installing agents",
+          "correct": false
+        },
+        {
+          "text": "Azure Migrate with Agentless Dependency Analysis (Service Map) + Azure Migrate: Server Migration with Agentless Replication \u2014 map dependencies, then replicate with ASR",
+          "correct": true
+        },
+        {
+          "text": "Azure Migrate: Server Migration with Azure VMware Solution (AVS) \u2014 migrate entire vSphere environment as-is including all network configuration",
+          "correct": false
+        }
+      ],
+      "planation": "Agentless dependency analysis (Service Map) maps all inter-VM network connections and firewall rules before migration. Combined with agentless ASR replication, this maps dependencies and migrates simultaneously. AVS is for VMware lift-and-shift, not for complex network migration."
+    },
+    {
+      "domain": "Storage & Data (Case Study)",
+      "question": "A hospital's EHR (Electronic Health Record) system runs on Oracle with 50TB of data. HIPAA requires encryption at rest with customer-managed keys (CMEK), audit logging of all data access, and data residency in US only. Which configuration?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Database for Oracle (Oracle at Azure) \u2014 Oracle-managed CMEK, Azure Monitor audit logs, regional SQL MI in East US",
+          "correct": false
+        },
+        {
+          "text": "Oracle Exadata in Azure (OEA) \u2014 dedicated Exadata infrastructure, Oracle Transparent Data Encryption (TDE) with keys in Azure Key Vault (CMEK), Azure Defender for SQL for audit, US regions only",
+          "correct": true
+        },
+        {
+          "text": "Lift-and-shift Oracle to Azure VMs with BitLocker encryption, keys stored in Azure Key Vault, Azure SQL Database audit logs for access auditing",
+          "correct": false
+        },
+        {
+          "text": "Azure Synapse Analytics with Oracle data loaded via PolyBase \u2014 HIPAA compliance built-in, CMEK via Azure Key Vault, customer-managed encryption keys",
+          "correct": false
+        }
+      ],
+      "planation": "Oracle Exadata in Azure (OEA) is purpose-built for Oracle workloads. It supports Oracle Transparent Data Encryption with Azure Key Vault CMEK (customer-managed keys), Oracle Audit Vault for HIPAA-compliant audit trails, and is available in US regions only. VM-based Oracle doesn't get Oracle-specific security features. Synapse is not a migration target for an operational EHR."
+    },
+    {
+      "domain": "Cost & Governance",
+      "question": "A company with $500K/month Azure spend wants to show cost by business unit (BU) and associate costs to actual resource owners. They currently have one flat billing account. Which should they implement first?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Create Management Groups for each BU, move subscriptions under the appropriate Management Group, enable Cost Management with Management Group scope",
+          "correct": true
+        },
+        {
+          "text": "Create tags on all resources: Department and Owner. Enable Cost Management with tag-based filtering \u2014 retroactively apply tags using Azure Policy",
+          "correct": false
+        },
+        {
+          "text": "Create a new Azure subscription per BU (maximum 50 subscriptions per tenant) \u2014 move resources via resource move between subscriptions",
+          "correct": false
+        },
+        {
+          "text": "Use Azure Advisor recommendations to identify cost optimization opportunities by resource \u2014 this is sufficient for the initial phase",
+          "correct": false
+        }
+      ],
+      "planation": "Management Groups provide organizational hierarchy for cost attribution before resources are tagged. Moving to Management Group scope in Cost Management shows costs by BU immediately \u2014 no resource-level tagging needed. Tags require retroactive application and only work if enforced at resource creation (via policy). New subscriptions is the bluntest instrument and has a 50-subscription limit."
+    },
+    {
+      "domain": "Compute & Migration (Case Study)",
+      "question": "A company is migrating from on-premises Docker Swarm to Azure. They need to deploy 200 microservices with complex service-to-service communication (mTLS, service discovery, traffic splitting). Which Azure service?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Container Apps (ACA) with Dapr integration \u2014 Dapr provides service discovery, mTLS (mutual cert), and traffic splitting as sidecar; ACA handles scaling and hosting",
+          "correct": true
+        },
+        {
+          "text": "Azure Kubernetes Service (AKS) with Istio service mesh \u2014 Istio handles mTLS, traffic management, and service discovery across all microservices",
+          "correct": false
+        },
+        {
+          "text": "Azure App Service with Azure Service Fabric \u2014 migrate Swarm containers to Service Fabric with built-in service discovery and naming service",
+          "correct": false
+        },
+        {
+          "text": "Azure Container Instances (ACI) with Azure Traffic Manager \u2014 each microservice in its own ACI, Traffic Manager for DNS-based service discovery",
+          "correct": false
+        }
+      ],
+      "planation": "Azure Container Apps with Dapr provides the complete microservices platform: Dapr sidecars handle mTLS (via Dapr's built-in cert management), service discovery (via Dapr name resolution), and traffic splitting. ACA scales to zero and is serverless. AKS + Istio is valid but more operational overhead. Service Fabric is legacy. ACI doesn't support the complex traffic management needed."
+    },
+    {
+      "domain": "Storage & Data (Case Study)",
+      "question": "A retail company with 1,000 stores needs to migrate from legacy tape backups to Azure. Each store has unreliable internet (1-5 Mbps). They need daily backup of 500GB per store with <24hr RPO. Which architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Backup Server (MARS agent) at each store, backed up to Azure Recovery Services vault \u2014 direct backup over internet, not suitable for 500GB with slow connection",
+          "correct": false
+        },
+        {
+          "text": "Deploy Azure Stack Edge at each store \u2014 local storage with built-in Azure Data Box Gateway, upload to Azure Blob Storage when connected, Azure Backup Server manages retention",
+          "correct": true
+        },
+        {
+          "text": "Use Azure Blob Storage with AzCopy scheduled to upload backups overnight \u2014 500GB per store over 1-5 Mbps takes 12+ hours, exceeding RPO",
+          "correct": false
+        },
+        {
+          "text": "Deploy a central Azure File Sync with StorSimple device at each store \u2014 Azure File Sync replicates to Azure Files, uses bandwidth throttling",
+          "correct": false
+        }
+      ],
+      "planation": "Azure Stack Edge is a physical appliance shipped to each store \u2014 it has local storage and a built-in data transfer mechanism that handles unreliable connections (bandwidth scheduling, compression). It uploads to Azure Blob Storage when connectivity is available. MARS over direct internet at 500GB per store is impractical. AzCopy over 1-5 Mbps fails the 24-hour RPO."
+    },
+    {
+      "domain": "Identity & Access (Case Study)",
+      "question": "A global manufacturing company uses Azure AD Connect to sync 10,000 users from on-premises AD DS. They acquired a company that uses Okta. The acquired company's 2,000 users need SSO to Azure apps using their existing Okta credentials. Which solution?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Configure Azure AD Connect with two forest configurations \u2014 sync both the manufacturing company's AD and the acquired company's Okta-managed identities",
+          "correct": false
+        },
+        {
+          "text": "Implement Microsoft Entra ID (Azure AD) External Identities with B2B collaboration \u2014 invited Okta users authenticate via Okta SSO using their existing credentials, no password sync",
+          "correct": true
+        },
+        {
+          "text": "Federate the acquired company's Okta tenant with the manufacturing company's Azure AD using SAML 2.0 federation \u2014 set up a new Azure AD tenant for the acquired company",
+          "correct": false
+        },
+        {
+          "text": "Create Azure AD guest accounts for each Okta user, set a temporary password, enable MFA \u2014 manage 2,000 guest accounts manually",
+          "correct": false
+        }
+      ],
+      "planation": "Entra ID B2B (External Identities) with direct federation to Okta allows Okta users to sign in with their Okta credentials \u2014 no password sync, no new accounts to manage. Direct federation establishes a trust relationship between Azure AD and Okta. Multi-forest Azure AD Connect doesn't federate with Okta."
+    },
+    {
+      "domain": "Storage & Data (Case Study)",
+      "question": "A multinational bank is migrating from on-premises MongoDB (3-node replica set, 100TB) to Azure. They need multi-region writes with automatic failover, <1 second RTO, and zero data loss. Which migration target?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Cosmos DB for MongoDB (4.0+ API) with multi-region writes enabled, automatic failover to secondary region, and provisioned RU/s autoscale",
+          "correct": true
+        },
+        {
+          "text": "Azure Cosmos DB Table API as an alternative since MongoDB API doesn't support true multi-region writes",
+          "correct": false
+        },
+        {
+          "text": "MongoDB Atlas on Azure (coming soon) \u2014 fully managed MongoDB on Azure infrastructure",
+          "correct": false
+        },
+        {
+          "text": "Lift-and-shift MongoDB to Azure VMs with Availability Set and Zone-redundant managed disks",
+          "correct": false
+        }
+      ],
+      "explanation": "Cosmos DB MongoDB API (4.0+) supports multi-region writes. Automatic failover is built-in. RU/s autoscale handles burst. Zero data loss guaranteed by Cosmos DB's consistency model."
+    },
+    {
+      "domain": "Compute & Migration (Case Study)",
+      "question": "A media company is migrating from AWS S3 to Azure. They have 10PB of video assets in S3 with Glacier metadata. They need to maintain the same storage tier structure. Which Azure storage migration?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Use AzCopy with AWS credentials to directly copy from S3 to Azure Blob Storage, then configure lifecycle policies: Hot \u2192 Cool \u2192 Archive \u2192 Cold to match S3/Glacier tiers",
+          "correct": true
+        },
+        {
+          "text": "Use Azure Data Box Heavy to migrate from AWS S3 to Azure Blob Storage, then configure lifecycle policies",
+          "correct": false
+        },
+        {
+          "text": "Use Azure Storage Explorer to manually migrate \u2014 too slow for 10PB",
+          "correct": false
+        },
+        {
+          "text": "Use Azure Data Factory with S3 connector for incremental migration",
+          "correct": false
+        }
+      ],
+      "explanation": "AzCopy supports S3 as a source natively \u2014 direct copy from S3 to Azure Blob Storage. Configure Azure lifecycle policies to match Glacier tiers: Hot \u2192 Cool \u2192 Archive \u2192 Cold. Data Box is for when network bandwidth is insufficient."
+    },
+    {
+      "domain": "Identity & Access (Case Study)",
+      "question": "A company with 3 Azure AD tenants (acquired companies) needs to consolidate into a single tenant. They want to keep existing Azure AD object IDs to avoid breaking RBAC assignments. Which is the correct approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Use Azure AD Connect with cross-tenant synchronization (preview) \u2014 maps source object IDs to target object IDs preserving immutable IDs",
+          "correct": true
+        },
+        {
+          "text": "Export all users to CSV, import into target tenant with new Object IDs \u2014 this breaks all existing RBAC assignments",
+          "correct": false
+        },
+        {
+          "text": "Use Microsoft Entra External Identities B2B to invite users \u2014 B2B users are guest accounts, not full employees",
+          "correct": false
+        },
+        {
+          "text": "Merge tenants using the Azure portal \u2014 Azure AD doesn't support tenant merging",
+          "correct": false
+        }
+      ],
+      "explanation": "Azure AD Connect cross-tenant synchronization maps source object IDs to target object IDs preserving immutable IDs across tenants. This prevents RBAC breakage. CSV import generates new IDs. B2B is for external collaborators. Tenant merging doesn't exist."
+    },
+    {
+      "domain": "Networking (Case Study)",
+      "question": "A retail company is deploying POS systems in 500 stores. Each store needs a secure connection to Azure. Store internet is unreliable (2-5 Mbps). Traffic is low volume (1MB/day per store). Which networking is most cost-effective?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Virtual WAN with VPN sites \u2014 one Virtual WAN hub per region manages all 500 stores from a single control plane, far cheaper than 500 individual VPN gateways",
+          "correct": true
+        },
+        {
+          "text": "Azure VPN Gateway (VpnGw1) with point-to-site VPN per store \u2014 each store needs a separate gateway connection, VpnGw1 supports 250 connections per gateway",
+          "correct": false
+        },
+        {
+          "text": "ExpressRoute for all 500 stores \u2014 requires physical connectivity to an ExpressRoute partner, prohibitively expensive for 500 retail stores",
+          "correct": false
+        },
+        {
+          "text": "Azure Relay (Hybrid Connections) \u2014 POS app makes outbound HTTPS connection to Azure Relay, suitable for occasional connections",
+          "correct": false
+        }
+      ],
+      "explanation": "Azure Virtual WAN with SD-WAN partner devices is the most cost-effective at 500+ stores: one hub per region vs 500 individual VPN Gateways. ExpressRoute per store is physically impossible. Azure Relay requires app code changes and is for occasional connections."
+    },
+    {
+      "domain": "Storage & Data (Case Study)",
+      "question": "A logistics company has a .NET 6 gRPC service communicating with a Python ML inference service (TensorFlow) inside an Azure VNet. gRPC service needs <50ms latency calling the ML service. Which hosting?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Container Apps (ACA) with VNet integration \u2014 supports gRPC HTTP/2, VNet integration for private networking, scales to zero, sub-50ms within VNet",
+          "correct": true
+        },
+        {
+          "text": "Azure Kubernetes Service (AKS) with internal Ingress \u2014 more control but higher operational overhead than ACA for a single microservice",
+          "correct": false
+        },
+        {
+          "text": "Azure App Service with VNet Integration \u2014 App Service doesn't natively support gRPC HTTP/2 traffic",
+          "correct": false
+        },
+        {
+          "text": "Azure Container Instances with public IP \u2014 not accessible from the gRPC service inside the VNet",
+          "correct": false
+        }
+      ],
+      "explanation": "ACA with VNet integration is the simplest managed option for containerized gRPC services inside an Azure VNet. It supports gRPC (HTTP/2), provides private networking, auto-scales, and costs less than AKS."
+    },
+    {
+      "domain": "Cost & Governance",
+      "question": "A company has 50 Azure subscriptions managed by different teams. They want to block all non-compliant resources that don't have owner-level tagging. Which Azure Policy at what scope?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Azure Policy with Deny effect targeting Microsoft.Resources/resources at the Management Group level \u2014 blocks resource creation org-wide without the required tag",
+          "correct": true
+        },
+        {
+          "text": "Azure Policy with Append effect at the Management Group level \u2014 Append adds tags but doesn't block creation of untagged resources",
+          "correct": false
+        },
+        {
+          "text": "Azure Policy with Audit effect at each subscription \u2014 Audit only logs non-compliance, doesn't prevent resource creation",
+          "correct": false
+        },
+        {
+          "text": "Use Azure Blueprints with policy assignment at subscription level \u2014 Blueprints are for initial setup, not ongoing enforcement",
+          "correct": false
+        }
+      ],
+      "explanation": "Deny effect at Management Group level blocks any resource created without the required tag before creation. Append only adds tags to existing resources. Audit is detection-only. Blueprints are for initial environment setup."
+    },
+    {
+      "domain": "HA/DR & Business Continuity",
+      "question": "A healthcare company runs critical apps on Azure VMs with ASR configured for DR. ASR failover took 90 minutes but their SLA is RTO < 60 minutes. What should they have done differently?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Deploy an active-active configuration: run workloads in two regions simultaneously, use Azure Traffic Manager for automatic failover \u2014 active-active eliminates failover time entirely",
+          "correct": true
+        },
+        {
+          "text": "Configure ASR with Azure Policy to use zone-redundant target region \u2014 ASR with ZRS disks doesn't reduce failover time",
+          "correct": false
+        },
+        {
+          "text": "Increase ASR replication frequency to 30 seconds \u2014 ASR replication frequency affects RPO (data loss), not RTO (failover time)",
+          "correct": false
+        },
+        {
+          "text": "Use ASR with automatic failover instead of manual \u2014 automatic failover still takes the same 60-90 minutes",
+          "correct": false
+        }
+      ],
+      "explanation": "The only way to achieve RTO < 60 min for a regional failure with VM workloads is active-active. Traffic Manager with health probes automatically routes to the healthy region with near-zero downtime. ASR's RTO is 60-90 minutes because it needs to boot VMs and catch up replication."
+    }
+  ]
+}
