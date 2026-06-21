@@ -1,0 +1,1228 @@
+{
+  "title": "GCP Professional Cloud Architect \u2014 Case Study Edition",
+  "description": "50 case study questions based on the 4 official GCP PCA case studies: Mountkirk Games (gaming), Dress4Win (retail), TerramEarth (IoT), and Helix (healthcare). Tests migration, architecture decisions, and real-world scenarios.",
+  "timeLimit": 75,
+  "count": 50,
+  "passingScore": 70,
+  "shuffle": true,
+  "domains": [
+    {
+      "name": "Mountkirk Games (Gaming/Multi-Region)",
+      "weight": 25
+    },
+    {
+      "name": "Dress4Win (Retail/Container Migration)",
+      "weight": 25
+    },
+    {
+      "name": "TerramEarth (IoT/Streaming)",
+      "weight": 25
+    },
+    {
+      "name": "Helix (Healthcare/HIPAA/Security)",
+      "weight": 25
+    }
+  ],
+  "questions": [
+    {
+      "domain": "Mountkirk Games (Gaming/Multi-Region)",
+      "question": "Mountkirk Games needs to build a real-time leaderboard for 50 million players with sub-100ms global latency and support for 1 million concurrent writes per second during peak events. Which GCP database architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Spanner with multi-region (nam-eur) configuration \u2014 global writes, strong consistency, 99.999% SLA but Cloud Spanner's write throughput is limited by distributed transaction overhead at 1M writes/sec scale",
+          "correct": false
+        },
+        {
+          "text": "Cloud Bigtable as the primary write store with autoscaling, Cloud Memorystore for Redis (replicated) for in-memory leaderboard cache, and Dataproc for nightly batch recalculation of historical rankings",
+          "correct": true
+        },
+        {
+          "text": "Firestore in multi-region mode for leaderboard writes + Cloud Spanner for historical game state \u2014 Firestore writes 1M/sec is achievable with sharding, Spanner for relational data",
+          "correct": false
+        },
+        {
+          "text": "GKE with Cassandra on persistent SSD \u2014 Cassandra handles 1M writes/sec but requires significant operational overhead managing the cluster",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Bigtable handles 1M+ writes/sec with horizontal scaling, integrates with Dataproc for batch reprocessing, and Cloud Memorystore Redis provides sub-millisecond read latency for the active leaderboard. This is the standard pattern for gaming leaderboards on GCP."
+    },
+    {
+      "domain": "Mountkirk Games (Gaming/Multi-Region)",
+      "question": "Mountkirk Games is designing a game analytics pipeline: 500GB of gameplay events per hour from globally distributed game servers, processed in real-time for live game ops dashboards, and archived for 90 days. Which data pipeline?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Pub/Sub (global) \u2192 Dataflow streaming (windowed aggregation) \u2192 BigQuery (real-time) + Cloud Storage (archive with 90-day lifecycle) \u2014 Pub/Sub handles global ingestion, Dataflow provides exactly-once processing semantics",
+          "correct": true
+        },
+        {
+          "text": "Pub/Sub Lite (zonal) \u2192 Dataflow streaming \u2192 BigQuery (real-time) \u2014 Pub/Sub Lite is cheaper but only zonal, not suitable for global game event ingestion",
+          "correct": false
+        },
+        {
+          "text": "Cloud Pub/Sub \u2192 Cloud Functions \u2192 BigQuery \u2014 Cloud Functions can't handle 500GB/hour sustained throughput, not designed for streaming",
+          "correct": false
+        },
+        {
+          "text": "Apache Kafka on GKE (Confluent) \u2192 Dataproc Streaming \u2192 BigQuery \u2014 self-managed Kafka on GKE adds significant operational overhead for what Pub/Sub handles natively",
+          "correct": false
+        }
+      ],
+      "explanation": "Pub/Sub's global endpoints handle geographically distributed game server ingestion. Dataflow streaming with exactly-once semantics prevents duplicate event processing. BigQuery streaming inserts enable real-time dashboards. Cloud Storage archive with lifecycle policy handles the 90-day retention. This is the standard GCP gaming analytics pattern."
+    },
+    {
+      "domain": "Mountkirk Games (Gaming/Multi-Region)",
+      "question": "Mountkirk Games needs to auto-scale their game server backend (stateful, 50 players per server instance) based on concurrent player count, with scale-out in under 60 seconds. Which GKE configuration?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "GKE Autopilot with custom metric (concurrent players) via Horizontal Pod Autoscaler (HPA) \u2014 Autopilot manages nodes, HPA scales pods based on custom metric from Cloud Monitoring",
+          "correct": true
+        },
+        {
+          "text": "GKE Standard with Managed Instance Groups (MIG) \u2014 MIGs are for GCE, not GKE pods",
+          "correct": false
+        },
+        {
+          "text": "GKE with Vertical Pod Autoscaler (VPA) \u2014 VPA adjusts pod resource requests, not pod count for scaling",
+          "correct": false
+        },
+        {
+          "text": "Compute Engine MIG with autoscaler based on game server CPU \u2014 lift-and-shift approach, but GKE is more cloud-native for containerized game servers",
+          "correct": false
+        }
+      ],
+      "explanation": "GKE Autopilot + HPA with custom metric (concurrent players via Cloud Monitoring custom metric API) is the most cloud-native approach. HPA scales pods based on actual game load. Autopilot handles node provisioning. Custom metrics require the Stackdriver Adapter for GKE."
+    },
+    {
+      "domain": "Mountkirk Games (Gaming/Multi-Region)",
+      "question": "Mountkirk Games' game clients download game assets (20GB patches) from CDN globally. Which Cloud CDN configuration provides the best cache hit ratio and lowest origin load?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud CDN with backend bucket pointing to Cloud Storage (multi-region) + cache key includes query string + signed URLs for premium users \u2014 signed URLs prevent unauthorized sharing",
+          "correct": false
+        },
+        {
+          "text": "Cloud CDN with backend bucket pointing to Cloud Storage + enable CDN cache invalidation for urgent patches + set long TTL (7 days) for static game assets + signed URLs for premium tier",
+          "correct": true
+        },
+        {
+          "text": "Cloud CDN with compute engine backend (VMs serving files) + Cloud Storage as backup \u2014 GCE as origin adds unnecessary complexity, CDN for GCE is legacy",
+          "correct": false
+        },
+        {
+          "text": "Global external HTTP(S) Load Balancer with Cloud CDN disabled + serve files directly from Cloud Storage \u2014 this bypasses CDN caching benefits",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud CDN with Cloud Storage backend bucket is the standard pattern for static game asset delivery. Long TTLs (7 days) for immutable game assets maximize cache hit ratio. Cache invalidation for urgent patches ensures fast propagation. Signed URLs for premium users prevent unauthorized sharing without separate authentication infrastructure."
+    },
+    {
+      "domain": "Dress4Win (Retail/Container Migration)",
+      "question": "Dress4Win is migrating a 3-tier .NET application (IIS web servers, Windows services, MS SQL Server 2016) from on-premises to GCP. They have 50 web server VMs, 10 app server VMs, and 2 SQL Server VMs (4TB). Which migration approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Migrate web servers to GKE with Windows containers (Windows node pools) + SQL Server to Cloud SQL for SQL Server with HA + app servers as Windows containers on GKE",
+          "correct": true
+        },
+        {
+          "text": "Lift-and-shift all 62 VMs to Compute Engine \u2014 preserve Windows Server tooling, use Managed Instance Groups for web servers, Cloud SQL for database",
+          "correct": false
+        },
+        {
+          "text": "Re-architect to ASP.NET Core on Cloud Run + Cloud SQL + GKE for Windows services \u2014 Cloud Run doesn't support Windows containers",
+          "correct": false
+        },
+        {
+          "text": "Migrate to Azure App Service for web tier, Azure SQL Database for SQL Server \u2014 wrong cloud for GCP exam scenario",
+          "correct": false
+        }
+      ],
+      "explanation": "GKE with Windows node pools is the migration path for Windows .NET apps on IIS. Windows containers on GKE (Windows Server container support) preserve the IIS configuration while enabling container orchestration. Cloud SQL for SQL Server with HA replaces the on-prem SQL with managed database. This is a lift-and-shift containerization."
+    },
+    {
+      "domain": "Dress4Win (Retail/Container Migration)",
+      "question": "Dress4Win needs to migrate their CI/CD pipeline from Jenkins (on-premises) to GCP. Their pipeline builds .NET containers, runs unit tests, scans for vulnerabilities, and deploys to GKE. Which GCP-native CI/CD?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Build for build/test/scanning + Artifact Registry for container images + Cloud Deploy for GKE progressive delivery + Binary Authorization to enforce signed image policy before GKE deployment",
+          "correct": true
+        },
+        {
+          "text": "GitLab CI on Compute Engine \u2014 migrate Jenkins to GCE, keep GitLab CI as the runner, simpler migration path but not GCP-native",
+          "correct": false
+        },
+        {
+          "text": "Jenkins on GKE with Helm \u2014 migrate Jenkins to GKE, Jenkins X is the Kubernetes-native evolution but requires re-architecting pipelines",
+          "correct": false
+        },
+        {
+          "text": "Cloud Build + Jenkins shared library \u2014 Cloud Build orchestrates Jenkins, Jenkins runs build steps, too complex for migration",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Build + Artifact Registry + Cloud Deploy + Binary Authorization is the fully GCP-managed replacement for Jenkins. Cloud Build handles build/test/vulnerability scanning (Container Analysis). Cloud Deploy manages progressive delivery to GKE. Binary Authorization ensures only scanned, signed images deploy. This replaces Jenkins entirely with managed GCP services."
+    },
+    {
+      "domain": "Dress4Win (Retail/Container Migration)",
+      "question": "Dress4Win's retail website experiences Black Friday traffic spikes: 10x normal traffic for 4 hours. They run 50 web server VMs (2 vCPU, 8GB) on GCE MIGs. Which auto-scaling configuration handles the spike with minimum cost?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "MIG autoscaler based on CPU > 80%, scale out to 500 VMs, scale in after 10 minutes \u2014 standard scaling but 500 VMs for 4 hours is expensive",
+          "correct": false
+        },
+        {
+          "text": "MIG autoscaler based on HTTP request rate (load balancing metric) + preemptible VMs for 90% of capacity (450 VMs) + standard VMs for 10% (50 VMs) \u2014 preemptible handles burst at 91% discount",
+          "correct": true
+        },
+        {
+          "text": "Cloud Run for the web application \u2014 scales to zero, pay-per-request, automatically handles traffic spikes without pre-provisioning, but requires containerizing the existing .NET app",
+          "correct": false
+        },
+        {
+          "text": "GKE with HPA based on CPU > 70% \u2014 GKE is overkill for simple web servers, adds Kubernetes complexity to a Windows container workload",
+          "correct": false
+        }
+      ],
+      "explanation": "MIG autoscaling with preemptible VMs (90% of capacity) gives 91% discount during the 4-hour spike. Standard VMs for baseline capacity. HTTP request rate scaling is more responsive than CPU-based for web servers. This is the most cost-effective approach without refactoring the existing .NET app."
+    },
+    {
+      "domain": "Dress4Win (Retail/Container Migration)",
+      "question": "Dress4Win needs to store product images (10TB, millions of images) with global fast access and automatic thumbnail generation on upload. Which storage + processing architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Storage (multi-region) for product images + Cloud Functions (trigger on object create) to generate thumbnails and store in a separate Cloud Storage bucket + Cloud CDN for global delivery",
+          "correct": true
+        },
+        {
+          "text": "Cloud Storage + App Engine Flexible for thumbnail generation \u2014 App Engine Flexible has faster scaling than Cloud Functions for burst, but more expensive and unnecessary overhead",
+          "correct": false
+        },
+        {
+          "text": "Firestore for image storage + Cloud Functions for thumbnails \u2014 Firestore is not designed for large binary files like images, should use Cloud Storage",
+          "correct": false
+        },
+        {
+          "text": "Compute Engine with NFS (Filestore) for images + custom VM-based thumbnail service \u2014 Filestore is enterprise NFS, unnecessary overhead for blob storage",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Storage (multi-region) for the primary images provides global access and durability. Cloud Functions with GCS trigger runs serverless thumbnail generation on upload \u2014 pays only for execution. Separate bucket for thumbnails. Cloud CDN caches thumbnails globally. This is the standard GCP image processing pattern."
+    },
+    {
+      "domain": "Dress4Win (Retail/Container Migration)",
+      "question": "Dress4Win needs to implement a shopping cart that persists across devices and sessions. Cart data is 100KB per user average, needs sub-10ms read/write, and must be globally consistent. Which database?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Firestore (in-datacenter mode) \u2014 Firestore is multi-region by default, sub-10ms reads, supports offline persistence, ideal for shopping cart",
+          "correct": true
+        },
+        {
+          "text": "Cloud Bigtable for shopping cart \u2014 Bigtable is designed for billions of users, but shopping cart at millions of users is overkill for Bigtable's scale",
+          "correct": false
+        },
+        {
+          "text": "Cloud SQL for SQL Server with read replica in each region \u2014 Cloud SQL is regional, not globally consistent, read replicas are eventually consistent",
+          "correct": false
+        },
+        {
+          "text": "Cloud Memorystore for Redis \u2014 in-memory, sub-ms latency, but no persistence, data lost on restart, unsuitable for cart storage",
+          "correct": false
+        }
+      ],
+      "explanation": "Firestore's multi-region deployment provides globally consistent reads and writes with sub-10ms latency in most regions. It handles millions of documents easily. Offline persistence (mobile/web SDK) is a bonus for shopping carts. Redis Memorystore is too volatile for cart data. Bigtable is overkill. Cloud SQL is regional only."
+    },
+    {
+      "domain": "TerramEarth (IoT/Streaming)",
+      "question": "TerramEarth has 500,000 vehicles transmitting telemetry every 30 seconds over satellite (high latency, intermittent connectivity, 500 bytes per message). Which IoT ingestion architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud IoT Core (deprecated) \u2192 Pub/Sub \u2192 Dataflow \u2192 BigQuery \u2014 IoT Core was the native GCP IoT ingestion service but has been deprecated, replaced by alternatives",
+          "correct": false
+        },
+        {
+          "text": "Vehicle gateway sends MQTT to Cloud IoT Core \u2192 Pub/Sub \u2192 Dataflow \u2192 BigQuery \u2014 IoT Core handles device registry and authentication, but it's been deprecated as of August 2025",
+          "correct": false
+        },
+        {
+          "text": "Vehicle uses HTTP/REST or MQTT to publish telemetry to Cloud Pub/Sub directly (using service account authentication) \u2192 Dataflow streaming \u2192 BigQuery for analytics + Cloud Storage for raw archival",
+          "correct": true
+        },
+        {
+          "text": "Vehicle streams directly to Cloud Bigtable via HBase API \u2014 Bigtable ingestion is complex for constrained vehicle hardware, Pub/Sub is simpler",
+          "correct": false
+        }
+      ],
+      "explanation": "Vehicles publish directly to Pub/Sub using service account authentication (JSON Web Tokens). This is the modern pattern post-IoT Core deprecation. Dataflow streams to BigQuery for real-time analytics and to Cloud Storage for raw archival. Direct Pub/Sub ingestion is simpler than IoT Core and works over satellite connections with HTTP/REST."
+    },
+    {
+      "domain": "TerramEarth (IoT/Streaming)",
+      "question": "TerramEarth wants to detect anomalies in vehicle sensor data (temperature, pressure, RPM) in real-time and alert field technicians within 60 seconds. Which real-time analytics architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Pub/Sub \u2192 Dataflow streaming with anomaly detection (using a machine learning model or threshold-based rules) \u2192 Cloud Pub/Sub output topic \u2192 Cloud Functions (trigger) \u2192 SMS/email via third-party (Twilio/SendGrid) to field technicians",
+          "correct": true
+        },
+        {
+          "text": "Pub/Sub \u2192 BigQuery streaming insert \u2192 scheduled query runs every 60 seconds to detect anomalies \u2192 Cloud Monitoring alerting \u2192 notify via email/SMS",
+          "correct": false
+        },
+        {
+          "text": "Pub/Sub Lite \u2192 Dataflow \u2192 BigQuery \u2192 Cloud Logging with log-based alert \u2014 BigQuery is not real-time enough for sub-minute anomaly detection",
+          "correct": false
+        },
+        {
+          "text": "Cloud IoT Core \u2192 Cloud Functions \u2192 Cloud Monitoring \u2192 alerting \u2014 IoT Core is deprecated, Cloud Functions has cold start latency",
+          "correct": false
+        }
+      ],
+      "explanation": "Dataflow streaming with anomaly detection processes sensor data as it arrives, immediately publishing anomalies to a Pub/Sub topic that triggers Cloud Functions for notifications. This achieves <60 second alert latency. BigQuery streaming + scheduled query introduces too much latency."
+    },
+    {
+      "domain": "TerramEarth (IoT/Streaming)",
+      "question": "TerramEarth needs to store 5 years of vehicle telemetry (100TB/day = 180PB total) for regulatory compliance and historical analytics. Which storage architecture with cost optimization?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Storage (Standard) for all 180PB \u2014 Standard tier is expensive at this scale, should tier the data based on age and access frequency",
+          "correct": false
+        },
+        {
+          "text": "BigQuery for all telemetry \u2014 BigQuery is for structured analytical queries, not raw telemetry storage; 100TB/day into BigQuery is cost-prohibitive, better for processed/aggregated data",
+          "correct": false
+        },
+        {
+          "text": "Cloud Storage with lifecycle: ingest to Standard \u2192 90 days Nearline \u2192 1 year Coldline \u2192 5 years Archive. Use BigQuery for processed aggregates from Cloud Storage. Store raw data in Cloud Storage Parquet format for cost-efficient analytics via BigQuery external queries.",
+          "correct": true
+        },
+        {
+          "text": "Cloud Bigtable for all 180PB \u2014 Bigtable can scale to this but is expensive for rarely-accessed historical data and doesn't support SQL queries directly",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Storage with tiered lifecycle + BigQuery for analytics is the standard pattern for IoT time-series data at scale. Raw data stored in Parquet on Cloud Storage (external table in BigQuery). Lifecycle: Standard (90 days) \u2192 Nearline (1 year) \u2192 Coldline (4 years) \u2192 Archive (compliant 5-year retention). 180PB at Standard rates would be $3.2M/month; lifecycle tiers reduce this significantly."
+    },
+    {
+      "domain": "TerramEarth (IoT/Streaming)",
+      "question": "TerramEarth vehicles need to receive firmware updates over-the-air (OTA). Updates are 500MB each, applied to 500K vehicles, with guaranteed delivery and rollback capability. Which update architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Storage (multi-region) with signed URLs for each vehicle + Cloud Functions to track delivery status in Firestore + vehicle-side update agent that reports status back to Firestore",
+          "correct": false
+        },
+        {
+          "text": "Cloud Storage + Cloud Pub/Sub for update notifications + Dataproc for firmware image processing + Firestore to track vehicle update state machine (pending \u2192 downloading \u2192 applying \u2192 complete/failed) + vehicle reports to Firestore",
+          "correct": false
+        },
+        {
+          "text": "Cloud Storage (signed URLs) + Pub/Sub for update notifications + Firestore for vehicle state tracking (500K documents) + vehicle-side agent downloads from GCS signed URL, reports status to Firestore + rollback via previous firmware version stored in GCS",
+          "correct": true
+        },
+        {
+          "text": "Cloud CDN for firmware distribution + Pub/Sub Lite for notifications \u2014 CDN provides edge caching for efficient large file delivery, Pub/Sub Lite handles the high-volume vehicle notifications",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Storage signed URLs let vehicles download firmware directly (GCS handles CDN edge delivery globally). Firestore tracks the state machine for each of 500K vehicles (downloading \u2192 applying \u2192 complete/failed). Previous firmware version is stored in GCS for rollback. This is the standard OTA update pattern on GCP."
+    },
+    {
+      "domain": "TerramEarth (IoT/Streaming)",
+      "question": "TerramEarth wants to use ML to predict vehicle maintenance needs (predictive maintenance) based on 2 years of historical sensor data (500TB). Which ML training and serving architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "BigQuery ML with logistic regression \u2014 run ML training directly on data in BigQuery, no data movement, simple SQL interface, sufficient for predictive maintenance classification",
+          "correct": true
+        },
+        {
+          "text": "Dataproc Serverless for Spark MLlib \u2014 upload 500TB from Cloud Storage to Dataproc, train with Spark MLlib, deploy model to Vertex AI \u2014 data movement is expensive and time-consuming",
+          "correct": false
+        },
+        {
+          "text": "Vertex AI AutoML for tabular data \u2014 upload training data to Vertex AI datasets, AutoML trains the model automatically, deploy to Vertex AI endpoints for real-time predictions",
+          "correct": false
+        },
+        {
+          "text": "Train model on-premises, export to TensorFlow SavedModel, deploy to Vertex AI Prediction \u2014 unnecessary given data is already in GCP",
+          "correct": false
+        }
+      ],
+      "explanation": "BigQuery ML with the data already in BigQuery (ingested from Cloud Storage via Dataflow) is the lowest-friction approach for predictive maintenance. Logistic regression or gradient boosted trees in BQML handle time-series predictive maintenance well. No data movement needed. Vertex AI AutoML is also valid but BQML is simpler for SQL-experienced data engineers."
+    },
+    {
+      "domain": "Helix (Healthcare/HIPAA/Security)",
+      "question": "Helix needs to process and store genomic data (100TB) for clinical research. Data contains PHI and must comply with HIPAA. Researchers need to query the data for clinical trials. Which storage and access architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Storage with CMEK (Cloud KMS) + VPC Service Controls + DLP API to classify PHI fields + BigQuery with authorized views for researchers + Cloud Audit Logs (Data Access) for HIPAA compliance",
+          "correct": true
+        },
+        {
+          "text": "Cloud Storage with Google-managed encryption + IAM-only access control + Cloud Audit Logs \u2014 Google-managed keys don't meet HIPAA requirement for customer-managed keys",
+          "correct": false
+        },
+        {
+          "text": "Filestore (enterprise NFS) for genomic data + IAM controls \u2014 Filestore doesn't support the audit and compliance requirements for PHI",
+          "correct": false
+        },
+        {
+          "text": "BigQuery with customer-managed encryption keys (CMEK) only \u2014 BigQuery alone doesn't provide the VPC perimeter and DLP that HIPAA requires for genomic data",
+          "correct": false
+        }
+      ],
+      "explanation": "HIPAA compliance on GCP requires: CMEK via Cloud KMS (HIPAA requires encryption with customer-managed keys), VPC Service Controls (data perimeter preventing exfiltration), Cloud DLP API for PHI classification, BigQuery authorized views for row/column-level access, and Cloud Audit Logs with Data Access logs enabled for the audit trail."
+    },
+    {
+      "domain": "Helix (Healthcare/HIPAA/Security)",
+      "question": "Helix needs to share clinical genomic data with 5 partner research institutions globally. Each partner has their own identity provider. Data sharing must be HIPAA-compliant and partners must not be able to download raw PHI. Which architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Create external identities in Helix's Google Cloud for each partner user (B2B collaboration) + grant BigQuery authorized views (no raw data export) + VPC Service Controls to enforce data perimeter \u2014 partners authenticate via their IdP through federation",
+          "correct": true
+        },
+        {
+          "text": "Create service accounts for each partner, store keys in partner systems \u2014 service account keys are a security risk and don't federate with partner IdPs",
+          "correct": false
+        },
+        {
+          "text": "Export data to partner cloud storage buckets (GCS/S3) \u2014 exporting PHI to external clouds violates HIPAA data handling requirements without additional controls",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud Storage signed URLs for data access \u2014 signed URLs give full access to the underlying data, not suitable for PHI sharing",
+          "correct": false
+        }
+      ],
+      "explanation": "External Identities (B2B federation) lets partner users authenticate with their own IdP (Okta, Azure AD, etc.) without creating Google accounts. BigQuery authorized views allow queries but prevent raw data export. VPC Service Controls ensure data can't leave the security perimeter. This is HIPAA-compliant federated data access on GCP."
+    },
+    {
+      "domain": "Helix (Healthcare/HIPAA/Security)",
+      "question": "Helix's clinical application runs on GKE with sensitive patient data in Cloud SQL. During a security audit, they discover that a compromised container could potentially read from Cloud SQL using the node's service account. How do you prevent this?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Enable Workload Identity on GKE \u2014 binds the Kubernetes Service Account (KSA) to the GCP Service Account (GSA). Pods use the KSA, which is automatically mapped to the GSA with minimal permissions. Node service account is never used by pods.",
+          "correct": true
+        },
+        {
+          "text": "Create a dedicated service account per application with minimal RBAC permissions \u2014 service accounts are shared at node level, not per-pod, so this doesn't prevent the attack",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud IAP (Identity-Aware Proxy) to tunnel all database access \u2014 IAP is for human access via the proxy, not container-to-database traffic",
+          "correct": false
+        },
+        {
+          "text": "Deploy a sidecar proxy (Istio/Anthos Service Mesh) to intercept database calls \u2014 adds operational complexity, Workload Identity is the simpler solution",
+          "correct": false
+        }
+      ],
+      "explanation": "Workload Identity is the Google-recommended solution for this exact attack vector. It eliminates the need for service account keys on nodes entirely. Pods authenticate as the GCP service account via the KSA-GSA binding. The node's default service account is never used by application pods. This prevents a compromised container from using the node's service account."
+    },
+    {
+      "domain": "Helix (Healthcare/HIPAA/Security)",
+      "question": "Helix needs to archive clinical trial documents (50TB, long-term, must be tamper-proof) for 25 years. Documents must be retrievable within 1 hour for audit purposes. Which Cloud Storage configuration?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Storage with Archive storage class + Object Versioning (enabled) + retention policy (25 years) + bucket lock (immutability policy) + Cloud KMS for customer-managed keys + archival metadata \u2014 Archive retrieval is 12 hours by default, not 1 hour",
+          "correct": false
+        },
+        {
+          "text": "Cloud Storage Nearline (for 1-hour access) with retention policy of 25 years + Object Lock (WORM) + CMEK via Cloud KMS + bucket policy-only access \u2014 Nearline is more expensive than Coldline/Archive but meets 1-hour RTO",
+          "correct": false
+        },
+        {
+          "text": "Cloud Storage Nearline + Object Versioning + 25-year Object Lock (immutability) + CMEK + Cloud DNS for retrieval \u2014 1-hour retrieval is possible with Nearline, Coldline is 12 hours, Archive is 12+ hours",
+          "correct": false
+        },
+        {
+          "text": "Cloud Storage Coldline with 25-year Object Lock (WORM/immutability) + CMEK + retention policy + lifecycle to Archive after 10 years \u2014 Coldline retrieval is 12 hours, NOT 1 hour. For 1-hour retrieval, Nearline is required.",
+          "correct": true
+        }
+      ],
+      "explanation": "Coldline has 12-hour retrieval SLA, not 1-hour. For 1-hour access + 25-year retention + immutability + CMEK, Nearline is the appropriate tier (1-hour retrieval SLA). Archive has 12+ hour retrieval SLA. Object Lock enforces immutability (WORM) for HIPAA-required tamper-proof storage. CMEK via Cloud KMS provides encryption with customer-managed keys."
+    },
+    {
+      "domain": "Helix (Healthcare/HIPAA/Security)",
+      "question": "Helix needs to implement column-level encryption for a PHI database in Cloud SQL for PostgreSQL: patient_id and diagnosis columns must be encrypted with keys managed by Helix (not Google). Which implementation?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Use pgcrypto extension in PostgreSQL with keys stored in Cloud KMS \u2014 pgcrypto provides column-level encryption, Cloud KMS stores encryption keys, application handles key retrieval from KMS",
+          "correct": true
+        },
+        {
+          "text": "Cloud SQL with CMEK \u2014 CMEK encrypts the entire disk, not individual columns, patient_id and diagnosis are still readable at the column level",
+          "correct": false
+        },
+        {
+          "text": "Transparent Data Encryption (TDE) in Cloud SQL \u2014 TDE encrypts the entire database at the storage layer, not column-level, and keys are managed by Google, not Helix",
+          "correct": false
+        },
+        {
+          "text": "Application-level encryption before inserting to Cloud SQL \u2014 encrypt patient_id and diagnosis in the application code using Cloud KMS, store encrypted blobs in Cloud SQL",
+          "correct": false
+        }
+      ],
+      "explanation": "PostgreSQL's pgcrypto extension with Cloud KMS-backed keys is the correct approach for column-level encryption with customer-managed keys. The application retrieves the key from Cloud KMS and uses pgcrypto to encrypt/decrypt specific columns. CMEK and TDE are disk-level encryption, not column-level."
+    },
+    {
+      "domain": "Mountkirk Games (Gaming/Multi-Region)",
+      "question": "Mountkirk Games is deploying a new game mode globally. They need to test with 5% of users in production (canary) with the ability to instantly roll back if error rate spikes. Which deployment + traffic splitting strategy?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Deploy with GKE progressive delivery: deploy new game server version, set canary percentage to 5%, monitor Cloud Monitoring error rate, auto-rollback if error rate > 1%, promote to 100% after 1 hour stable",
+          "correct": true
+        },
+        {
+          "text": "Istio VirtualService with weight-based routing (5% to canary) + Prometheus/Grafana for monitoring \u2014 requires managing Istio control plane, Cloud Deploy is simpler",
+          "correct": false
+        },
+        {
+          "text": "Cloud Load Balancer with URL-based routing (5% to canary backend) + manual kubectl rollout \u2014 too manual, no automatic rollback",
+          "correct": false
+        },
+        {
+          "text": "GKE Helm deployment with canary plugin + HPA \u2014 canary is based on pod count, not traffic percentage, doesn't support instant rollback",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Deploy with GKE progressive delivery is the Google-recommended canary deployment. It handles traffic splitting by percentage (not just pod count), integrates with Cloud Monitoring for automatic rollback based on error rates, and supports instant promotion or rollback. This is fully managed with no Istio overhead."
+    },
+    {
+      "domain": "Dress4Win (Retail/Container Migration)",
+      "question": "Dress4Win needs to migrate 4TB of product catalog data from an on-premises Oracle database to Cloud SQL for PostgreSQL. The migration must have zero downtime and validate data integrity before cutover. Which migration path?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Use Database Migration Service (DMS) with online migration (continuous replication) from Oracle to Cloud SQL PostgreSQL \u2014 DMS handles schema conversion and continuous sync, validate with checksum comparison, cutover via DNS",
+          "correct": true
+        },
+        {
+          "text": "Export from Oracle to CSV (expdp), upload to Cloud Storage, import to Cloud SQL PostgreSQL using psql \u2014 requires significant downtime for 4TB export/import",
+          "correct": false
+        },
+        {
+          "text": "Use Data Fusion for CDC-based migration \u2014 Data Fusion is ETL-focused, not the best tool for zero-downtime database migration",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud SQL for PostgreSQL import from Oracle with Ora2Pg \u2014 Ora2Pg automates Oracle-to-PostgreSQL schema and data migration, DMS is the managed option",
+          "correct": false
+        }
+      ],
+      "explanation": "DMS online migration uses Oracle LogMiner or similar CDC to continuously replicate changes from Oracle to Cloud SQL PostgreSQL. Zero downtime migration with near-real-time sync. Schema conversion is automated. Validation via checksum comparison between source and target. DNS cutover at the end."
+    },
+    {
+      "domain": "TerramEarth (IoT/Streaming)",
+      "question": "TerramEarth's fleet management dashboard (web app) shows real-time vehicle positions on a map. It needs to handle 1,000 concurrent users, 10-second position updates per vehicle, and global low-latency access. Which web hosting and data architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Run for the dashboard web app (containerized) + Firestore (real-time) for vehicle positions (Firestore's real-time listeners push updates to web clients) + Cloud CDN for static asset delivery",
+          "correct": true
+        },
+        {
+          "text": "App Engine Flexible for the dashboard + Cloud Bigtable for vehicle positions \u2014 Bigtable's API isn't push-based like Firestore, web clients would need to poll",
+          "correct": false
+        },
+        {
+          "text": "GKE with a WebSocket-based backend service + Cloud Memorystore for Redis (pub/sub for position updates) + Cloud CDN \u2014 too complex, Firestore handles this natively",
+          "correct": false
+        },
+        {
+          "text": "Firebase Realtime Database + Firebase Hosting \u2014 Firebase Hosting serves the dashboard, Realtime Database pushes position updates to web clients via WebSocket. Firebase Realtime Database is deprecated in favor of Firestore.",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Run serves the dashboard containerized, auto-scales. Firestore's real-time listeners (WebSocket-based) push position updates to web clients every 10 seconds without polling. Cloud CDN caches static assets globally. This is the modern GCP pattern for real-time collaborative apps."
+    },
+    {
+      "domain": "Helix (Healthcare/HIPAA/Security)",
+      "question": "Helix needs to send clinical alerts (containing de-identified PHI) via SMS to doctors when patient conditions change. SMS must be delivered within 5 minutes. Which notification architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Pub/Sub \u2192 Cloud Functions (trigger on alert event) \u2192 Twilio SendGrid API for SMS + Cloud Monitoring for SMS delivery tracking \u2014 Pub/Sub + Cloud Functions is fully managed, Twilio is the standard for SMS",
+          "correct": true
+        },
+        {
+          "text": "Cloud Pub/Sub \u2192 Cloud Run (HTTP trigger) \u2192 Twilio API for SMS \u2014 Cloud Run has cold starts that could delay 5-min SLA, Cloud Functions is faster for short-lived triggers",
+          "correct": false
+        },
+        {
+          "text": "Firebase Cloud Messaging (FCM) for push notifications to mobile apps \u2014 FCM is for mobile app push, not SMS, and doesn't support the HIPAA compliance requirements for clinical alerts",
+          "correct": false
+        },
+        {
+          "text": "Cloud Scheduler (triggers every minute) \u2192 Cloud Functions \u2192 Twilio \u2014 Cloud Scheduler is for scheduled jobs, not event-driven real-time alerts",
+          "correct": false
+        }
+      ],
+      "explanation": "Pub/Sub captures clinical alerts from the processing pipeline. Cloud Functions (1st gen) with Twilio SDK sends SMS immediately on trigger \u2014 sub-second cold start, no instance management. Twilio provides SMS delivery confirmation. This achieves <5 minute delivery SLA."
+    },
+    {
+      "domain": "Mountkirk Games (Gaming/Multi-Region)",
+      "question": "Mountkirk Games processes game event data through Dataflow and stores results in BigQuery. During a Dataflow job, a transient network issue caused 15 minutes of events to be lost. How do you prevent this in future runs?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Enable Pub/Sub exactly-once delivery with 10-minute deduplication window \u2014 Pub/Sub exactly-once prevents duplicate messages and ensures no data loss during transient subscriber failures",
+          "correct": true
+        },
+        {
+          "text": "Configure Dataflow with checkpointing (stateful processing) \u2014 checkpointing saves pipeline state but doesn't prevent upstream data loss from Pub/Sub",
+          "correct": false
+        },
+        {
+          "text": "Increase Pub/Sub retention duration to 7 days + replay from timestamp when job restarts \u2014 this is for job recovery, not prevention of data loss during normal operation",
+          "correct": false
+        },
+        {
+          "text": "Use Dataflow with a dead-letter topic for failed messages \u2014 dead-letter handles failures, not transient network issues that cause data loss",
+          "correct": false
+        }
+      ],
+      "explanation": "Pub/Sub exactly-once delivery (enabled with a deduplication window) ensures messages are delivered exactly once even during transient subscriber failures. Combined with Dataflow's built-in exactly-once processing semantics, this prevents both duplicate processing and data loss from network issues."
+    },
+    {
+      "domain": "Dress4Win (Retail/Container Migration)",
+      "question": "Dress4Win's product images are stored in Cloud Storage with inconsistent naming. They need to standardize naming and generate metadata (dimensions, format, size) for a catalog of 10 million images. Which processing approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Functions (GCS trigger) \u2014 good for individual object operations, but 10M images \u00d7 function invocation cost and timeout makes this unsuitable at scale",
+          "correct": false
+        },
+        {
+          "text": "Dataflow with a custom DoFn to read GCS object list, process each image (ImageMagick/Python Pillow), write metadata to BigQuery + rename objects using GCS Object Compose \u2014 batch processing at scale with Dataflow's auto-scaling",
+          "correct": true
+        },
+        {
+          "text": "Dataproc Serverless for Spark with image processing library \u2014 Dataproc Serverless scales automatically, handles 10M images efficiently with distributed processing",
+          "correct": false
+        },
+        {
+          "text": "Cloud Life Sciences (Google's managed workflow service) + Batch for image processing \u2014 Life Sciences is for bioinformatics, Batch is for HPC, Dataflow is the standard GCP ETL tool",
+          "correct": false
+        }
+      ],
+      "explanation": "Dataflow batch pipeline reads all 10M objects from GCS (using a ListFiles workflow), processes each image to extract metadata (Pillow/OpenCV), writes metadata to BigQuery, and uses GCS Object Compose API to rename objects. Dataflow's auto-scaling handles the load efficiently. This is the standard GCP pattern for large-scale batch object processing."
+    },
+    {
+      "domain": "TerramEarth (IoT/Streaming)",
+      "question": "TerramEarth's data engineering team needs to run ad-hoc SQL queries on vehicle telemetry data in Cloud Storage (Parquet files, 50TB). Queries run once per week. Which query engine is most cost-effective?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "BigQuery external tables over Cloud Storage Parquet \u2014 BigQuery external queries (on-demand) scan only the data needed, $5/TB scanned. For weekly ad-hoc on 50TB, on-demand is cheaper than a persistent cluster.",
+          "correct": true
+        },
+        {
+          "text": "Dataproc Serverless for Spark SQL \u2014 Dataproc Serverless has minimum 10-minute billing, $0.05/vCPU-second minimum, expensive for occasional queries vs BigQuery",
+          "correct": false
+        },
+        {
+          "text": "Permanent Dataproc cluster (10 nodes) for weekly queries \u2014 $0.05/vCPU-hour \u00d7 10 \u00d7 24 hours \u00d7 30 days = $360/month even with no queries, vastly more expensive than BigQuery external",
+          "correct": false
+        },
+        {
+          "text": "BigQuery persistent table (loaded from Cloud Storage) \u2014 loading data into BigQuery costs $0.05/GB, but external tables query data in place without loading cost",
+          "correct": false
+        }
+      ],
+      "explanation": "BigQuery external tables query Parquet files in Cloud Storage directly \u2014 $5/TB scanned (on-demand). For weekly ad-hoc queries scanning ~50TB/week, this is $250/query \u00d7 4 = $1K/month. Dataproc Serverless minimum billing makes it expensive for occasional queries. No persistent cluster needed."
+    },
+    {
+      "domain": "Helix (Healthcare/HIPAA/Security)",
+      "question": "Helix needs to manage encryption keys for 500TB of clinical data in Cloud Storage and Cloud SQL. Keys must be rotated annually and rotated immediately if a key compromise is suspected. Which key management?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud KMS with automatic key rotation enabled (annual) + Cloud Audit Logs for key access auditing + Cloud KMS import job for externally generated key material if emergency rotation needed",
+          "correct": true
+        },
+        {
+          "text": "Customer-supplied encryption keys (CSEK) stored in Cloud Storage \u2014 CSEK requires manual key management outside GCP, rotation requires re-uploading all data with new key",
+          "correct": false
+        },
+        {
+          "text": "Cloud HSM (Hardware Security Module) for key storage \u2014 HSM provides FIPS 140-2 Level 1 compliance, but Cloud KMS with HSM-backed keys (premium tier) is the GCP equivalent for high-security workloads",
+          "correct": false
+        },
+        {
+          "text": "Cloud Key Management Vault (Key Vault) \u2014 Azure's key management service, not GCP",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud KMS with automatic annual rotation meets the compliance requirement. Cloud Audit Logs capture all key access for compliance auditing. If key compromise is suspected, Cloud KMS supports immediate key rotation (manual) + revocation via key version disable. For HIPAA, HSM-backed KMS keys provide the highest security."
+    },
+    {
+      "domain": "Mountkirk Games (Gaming/Multi-Region)",
+      "question": "Mountkirk Games runs game servers on GKE. During peak, they see packet loss and latency spikes due to network congestion between pods in different availability zones. Which GKE networking optimization?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Enable GKE Dataplane V2 (eBPF-based networking) \u2014 Dataplane V2 provides network policies and pod-level networking, but doesn't directly address cross-AZ network congestion",
+          "correct": false
+        },
+        {
+          "text": "Configure GKE node pools with topology-aware routing (enableNodeNa=false) + use Container Network Interface (CNI) with local traffic routing \u2014 topology-aware routing ensures pods prefer same-AZ communication",
+          "correct": true
+        },
+        {
+          "text": "Deploy pods using nodeSelector to pin pods to specific zones \u2014 manual placement prevents the orchestrator from optimizing cross-AZ traffic, not recommended",
+          "correct": false
+        },
+        {
+          "text": "Use a Global load balancer to route traffic to the nearest zone \u2014 load balancers handle external traffic, not pod-to-pod traffic within the cluster",
+          "correct": false
+        }
+      ],
+      "explanation": "GKE topology-aware routing (enableNodeNa=false in Network Policy config) ensures the Kubernetes scheduler prefers scheduling pods that communicate frequently to the same availability zone. This minimizes cross-AZ network hops and reduces latency. GKE Dataplane V2 improves pod networking but isn't specifically for cross-AZ optimization."
+    },
+    {
+      "domain": "Dress4Win (Retail/Container Migration)",
+      "question": "Dress4Win is migrating from a monolithic Jenkins CI/CD server to GCP. Their Jenkins has 200 build agents, 50 shared libraries, and complex pipeline scripts. Which migration strategy?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Lift-and-shift Jenkins to GCE (Managed Instance Group) \u2014 preserve all pipeline scripts and shared libraries, scale agents with MIG, simplest migration path",
+          "correct": true
+        },
+        {
+          "text": "Migrate to Cloud Build with Jenkins integration (Jenkins Stackdriver Plugin) \u2014 Cloud Build becomes the primary CI, Jenkins is still needed for agents, too complex",
+          "correct": false
+        },
+        {
+          "text": "Rewrite all Jenkins pipelines in Cloud Build YAML \u2014 requires rewriting 200 agents worth of pipeline code, too time-consuming for migration",
+          "correct": false
+        },
+        {
+          "text": "Deploy Jenkins X on GKE for cloud-native Jenkins \u2014 Jenkins X is for Kubernetes-native CI/CD, different architecture, requires complete pipeline redesign",
+          "correct": false
+        }
+      ],
+      "explanation": "Jenkins on GCE with MIG is the pragmatic migration path: preserves all existing pipelines, shared libraries, and agent configurations. Scale the MIG based on build queue depth. This is a lift-and-shift that eliminates on-premises hardware while maintaining the existing Jenkins investment. Complete rewrite in Cloud Build is too risky for 200 pipelines."
+    },
+    {
+      "domain": "TerramEarth (IoT/Streaming)",
+      "question": "TerramEarth's data science team needs to train ML models on 500TB of vehicle telemetry data weekly. Training takes 8 hours on 100 VMs. They need to minimize cost and avoid paying for idle resources between training runs. Which approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Vertex AI Custom Training with reserved resources \u2014 reserve 100 custom training nodes for the 8-hour window, release after training. More expensive than preemptible but guaranteed availability.",
+          "correct": false
+        },
+        {
+          "text": "Dataproc Serverless for Spark ML \u2014 serverless, auto-scales, pay-per-second for the exact resources used during the 8-hour training. No persistent cluster. Best for variable/batch ML workloads.",
+          "correct": true
+        },
+        {
+          "text": "Compute Engine with preemptible VMs (100 \u00d7 preemptible) + startup script to launch training \u2014 preemptible costs 91% less but no guaranteed availability, training could be interrupted",
+          "correct": false
+        },
+        {
+          "text": "Permanent Dataproc cluster (100 nodes) with scheduled scaling \u2014 keep 100 nodes running 24/7 even between training runs, very expensive",
+          "correct": false
+        }
+      ],
+      "explanation": "Dataproc Serverless for Spark is the modern GCP approach for batch ML workloads: it spins up managed Spark clusters only during job execution, auto-scales during the job, and releases resources when done. Pay-per-second. No cluster management overhead. This eliminates the 91% cost of keeping 100 nodes running between weekly training runs."
+    },
+    {
+      "domain": "Helix (Healthcare/HIPAA/Security)",
+      "question": "Helix needs to give external auditors temporary read access to their GCP environment for 30 days. Auditors must not be able to access production data directly. Access must be fully audited. Which approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Create Google Cloud OAuth 2.0 credentials (client_id/client_secret) for the auditor organization \u2014 federate auditor IdP with Cloud Identity, grant Viewer role at org level with conditions limiting to audit log access only",
+          "correct": true
+        },
+        {
+          "text": "Create dedicated Google accounts for each auditor, assign Viewer role at org level \u2014 managing individual Google accounts is operationally heavy, not recommended for temporary access",
+          "correct": false
+        },
+        {
+          "text": "Use service accounts for auditors \u2014 service accounts are for workloads, not humans, and can't be easily restricted to temporary access periods",
+          "correct": false
+        },
+        {
+          "text": "Enable Cloud Identity-Aware Proxy (IAP) for the audit dashboard app \u2014 IAP is for app-level access, not org-wide read access for auditors",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Identity (Google's IdP) federates with the auditor's corporate IdP (Azure AD/Okta). Auditors authenticate with their corporate credentials. Time-based Conditional Access policies (30-day expiration) + org-level Viewer role scoped to audit logs and Cloud Audit Logs. Full IAM audit trail. No separate Google accounts needed."
+    },
+    {
+      "domain": "Mountkirk Games (Gaming/Multi-Region)",
+      "question": "Mountkirk Games needs to implement A/B testing for game features: route 20% of players to a new game mode, measure engagement metrics (session length, retention) in real-time, and auto-promote if metrics improve. Which experimentation platform?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Load Balancer with URL map path-based routing (20% to variant) + BigQuery for analytics + manual decision \u2014 no automatic promotion, manual analysis required",
+          "correct": false
+        },
+        {
+          "text": "Firebase Remote Config for feature flags + Firebase Analytics for real-time metrics + Cloud Functions to automate promotion when metrics improve \u2014 Firebase handles the experimentation platform end-to-end",
+          "correct": true
+        },
+        {
+          "text": "Cloud Run with traffic splitting (20% to variant) + Cloud Monitoring dashboards \u2014 Cloud Run supports traffic splitting but doesn't provide the experimentation metrics and automatic promotion logic",
+          "correct": false
+        },
+        {
+          "text": "Spinnaker with canary analysis \u2014 Spinnaker has canary analysis but requires significant operational overhead, Firebase Remote Config is purpose-built for feature experimentation",
+          "correct": false
+        }
+      ],
+      "explanation": "Firebase Remote Config allows percentage-based feature rollouts. Firebase Analytics tracks engagement metrics in real-time. Cloud Functions (triggered by Analytics conversion events) automatically promotes the variant if metrics improve. This is the Google-recommended A/B testing platform for mobile and game apps."
+    },
+    {
+      "domain": "Dress4Win (Retail/Container Migration)",
+      "question": "Dress4Win's retail website serves 5 million products from Cloud Storage. SEO requires that image URLs never change (immutable), but they need to migrate from legacy CDN to Cloud CDN. How do you prevent broken image links?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud CDN with backend bucket pointing to Cloud Storage + enable cache invalidation for all existing URLs before switch \u2014 invalidation clears the old CDN cache, Cloud CDN serves from new origin",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud Storage object versioning \u2014 keep old object names accessible via versioned URLs while new objects use new naming scheme, too complex",
+          "correct": false
+        },
+        {
+          "text": "Implement a URL forwarding layer (Cloud Load Balancer + URL map) that maps legacy CDN URLs to new Cloud CDN URLs \u2014 existing links continue to work via redirect",
+          "correct": false
+        },
+        {
+          "text": "Cloud CDN with backend bucket (origin is Cloud Storage) + signed URLs with long expiry (1 year) + use object name as immutable identifier (Content-ID or object path) \u2014 Cloud CDN caches at edge, Cloud Storage is origin, URLs remain stable",
+          "correct": true
+        }
+      ],
+      "explanation": "Cloud Storage object names (URLs) are immutable \u2014 once created, the URL never changes. Point Cloud CDN backend bucket to Cloud Storage. Long TTL (1 year) in CDN headers ensures images stay cached. Signed URLs prevent unauthorized access. The migration to Cloud CDN is transparent to existing URLs \u2014 just change the DNS record to point to the Cloud CDN IP."
+    },
+    {
+      "domain": "TerramEarth (IoT/Streaming)",
+      "question": "TerramEarth's vehicle telemetry is ingested via Pub/Sub and processed by Dataflow. An ML model (deployed to Vertex AI) needs to score each vehicle event in real-time (<500ms end-to-end). Which real-time scoring architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Pub/Sub \u2192 Dataflow (streaming) \u2192 Vertex AI Online Prediction endpoint \u2192 Pub/Sub output for scored events \u2014 Dataflow calls Vertex AI online prediction for real-time scoring",
+          "correct": true
+        },
+        {
+          "text": "Pub/Sub \u2192 Cloud Functions \u2192 Vertex AI Online Prediction \u2014 Cloud Functions cold starts make 500ms latency challenging at 500K events/second scale",
+          "correct": false
+        },
+        {
+          "text": "Pub/Sub Lite (zonal) \u2192 Dataflow \u2192 Vertex AI batch prediction \u2014 batch prediction has hours of latency, not real-time",
+          "correct": false
+        },
+        {
+          "text": "Pub/Sub \u2192 Vertex AI Online Prediction directly (no Dataflow) \u2014 Vertex AI online prediction can be called directly but doesn't have the streaming windowing and exactly-once semantics that Dataflow provides",
+          "correct": false
+        }
+      ],
+      "explanation": "Dataflow streaming processes vehicle events in real-time, calls Vertex AI Online Prediction for ML scoring, outputs scored events to Pub/Sub for downstream processing. Vertex AI Online Prediction provides sub-100ms prediction latency. Dataflow provides buffering and exactly-once semantics. This is the standard real-time ML scoring pattern on GCP."
+    },
+    {
+      "domain": "Helix (Healthcare/HIPAA/Security)",
+      "question": "Helix needs to manage 500 IoT medical devices (heart rate monitors, infusion pumps) that must only communicate with approved GCP services and cannot access the public internet. Devices have limited compute. Which IoT device management and network security?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud IoT Core (deprecated) for device registry + authentication via JWT (JSON Web Tokens) + VPC Service Controls to create a data perimeter around Cloud IoT Core and BigQuery",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud Pub/Sub with service account authentication (JWT) + VPC Service Controls to restrict data exfiltration + Cloud Functions for device command processing \u2014 Cloud IoT Core was the native IoT device management but is deprecated",
+          "correct": true
+        },
+        {
+          "text": "Bare-metal IoT hub on Compute Engine \u2014 self-managed IoT hub on GCE, operational overhead, not the recommended approach on GCP",
+          "correct": false
+        },
+        {
+          "text": "Partner IoT platform (AWS IoT Core or Azure IoT Hub) \u2014 wrong cloud, Helix is a GCP-first organization",
+          "correct": false
+        }
+      ],
+      "explanation": "Post-IoT Core deprecation, the pattern is: devices authenticate to Pub/Sub using service account JWTs (no keys stored on devices). VPC Service Controls create a security perimeter \u2014 devices can only publish to Pub/Sub within the perimeter, cannot exfiltrate data. Cloud Functions (HTTP trigger) handle device commands. Devices with limited compute use lightweight MQTT/HTTP libraries."
+    },
+    {
+      "domain": "Mountkirk Games (Gaming/Multi-Region)",
+      "question": "Mountkirk Games processes 1TB of game replay data daily. Replays are played back for analytics (heatmaps, player movement). Storage format is raw binary (100GB per replay, 10 replays/day). Which storage for both raw replay storage and efficient analytical access?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Storage (Standard) for raw replays + Dataproc Serverless for Spark to process replays into Parquet format + BigQuery for analytics \u2014 Dataproc Serverless handles binary file processing efficiently",
+          "correct": true
+        },
+        {
+          "text": "Cloud Bigtable for replay storage \u2014 Bigtable is wide-column, not designed for large binary file storage, would require splitting replays into many rows",
+          "correct": false
+        },
+        {
+          "text": "Firestore for replay metadata + Cloud Storage for raw replay binary files + Dataproc for analytics \u2014 this separates metadata from raw data, metadata in Firestore for fast lookup",
+          "correct": false
+        },
+        {
+          "text": "Cloud Storage (Nearline) for raw replays + BigQuery with external tables for analytics \u2014 external tables can query GCS Parquet but binary raw replays need preprocessing to Parquet first",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Storage Standard holds the raw binary replays (immutable, cheap storage). Dataproc Serverless (Spark) processes binary replays into analytical format (Parquet) and stores processed analytics data in BigQuery. Dataproc Serverless is the right choice because replay processing is compute-intensive but intermittent (10 replays/day), and Dataproc Serverless eliminates cluster management."
+    },
+    {
+      "domain": "Dress4Win (Retail/Container Migration)",
+      "question": "Dress4Win's recommendation engine runs on GKE and needs to call a 3rd-party product recommendation API (outside GCP). The API has rate limits (1000 req/min). How do you handle rate limiting and resilience?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Deploy Ambassador (Envoy-based API gateway) on GKE for rate limiting + circuit breaker pattern + Redis (Cloud Memorystore) for distributed request counting across pod replicas",
+          "correct": true
+        },
+        {
+          "text": "Cloud Endpoints with rate limiting enabled \u2014 Cloud Endpoints is the GCP-native API gateway for GKE, handles rate limiting and authentication",
+          "correct": false
+        },
+        {
+          "text": "Cloud Load Balancer with rate limiting \u2014 LB rate limiting is at the connection level, not at the API call level, not suitable for per-customer rate limiting",
+          "correct": false
+        },
+        {
+          "text": "Application-level semaphore with in-memory counter \u2014 in-memory counter doesn't sync across pod replicas, race conditions cause incorrect rate limiting",
+          "correct": false
+        }
+      ],
+      "explanation": "Ambassador (or similar Envoy-based ingress like GKE Ingress with backend config rate limiting) handles rate limiting at the API gateway layer. Circuit breaker prevents cascade failures when the external API is slow/unavailable. Cloud Memorystore for Redis provides distributed rate limit counters across all pod replicas. This is the standard resilient external API calling pattern."
+    },
+    {
+      "domain": "TerramEarth (IoT/Streaming)",
+      "question": "TerramEarth needs to archive 100PB of historical telemetry for 7 years. The legal team requires that archived data cannot be modified or deleted for 7 years (immutability). Which Cloud Storage configuration?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Storage with Object Lock (WORM) in COMPLIANCE mode with 7-year retention + Archive storage class + Cloud KMS for customer-managed encryption keys + lifecycle policy to delete after 7 years",
+          "correct": true
+        },
+        {
+          "text": "Cloud Storage with Object Versioning enabled + retention policy of 7 years \u2014 Object Versioning keeps all versions, retention policy prevents deletion but versioning adds storage cost",
+          "correct": false
+        },
+        {
+          "text": "Cloud Storage Nearline with 7-year retention policy + Cloud KMS for encryption \u2014 Nearline is for frequently accessed data, Archive is for 90+ day access, wrong tier for 7-year archival",
+          "correct": false
+        },
+        {
+          "text": "Cloud Storage Archive with Object Lock in GOVERNANCE mode (7 years) \u2014 GOVERNANCE mode allows bucket\u7ba1\u7406\u5458 to override retention, not suitable for legal compliance",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Storage Object Lock in COMPLIANCE mode with 7-year retention is legally immutable \u2014 even the bucket owner cannot delete objects until the retention period expires. COMPLIANCE mode is required for legal/regulatory compliance. Archive storage class is the cheapest for 7-year cold storage. Cloud KMS CMEK provides encryption with customer-managed keys."
+    },
+    {
+      "domain": "Helix (Healthcare/HIPAA/Security)",
+      "question": "Helix's Kubernetes cluster (GKE) stores PHI in Cloud SQL. During a compliance audit, auditors need to verify that all database queries were executed by authorized service accounts. Which audit logging configuration?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Enable Cloud Audit Logs (Data Access) for Cloud SQL \u2014 Data Access logs record every query including the IAM principal that executed it, export to Cloud Logging log bucket with 7-year retention",
+          "correct": true
+        },
+        {
+          "text": "Enable Cloud SQL query insights \u2014 query insights shows query patterns and performance, not which service account executed which query",
+          "correct": false
+        },
+        {
+          "text": "Enable Cloud Audit Logs (Admin Activity only) \u2014 Admin Activity logs only record admin actions (create/delete DB), not data access queries",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud SQL audit logs (PostgreSQL/MySQL native audit logging) \u2014 native DB audit logs are stored in the database itself, can be tampered with by DB admins, Cloud Audit Logs are tamper-proof",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Audit Logs with Data Access (ADMIN_READ and DATA_READ/Data_WRITE) enabled for Cloud SQL records every query with the IAM principal's identity. These logs are written to Cloud Logging (not the database), making them tamper-evident. Export to a dedicated log bucket (in a separate project) with 7-year retention for compliance."
+    },
+    {
+      "domain": "Mountkirk Games (Gaming/Multi-Region)",
+      "question": "Mountkirk Games needs to implement session-based authentication for their game web portal: sessions must persist across device restarts and be valid for 30 days. Which authentication and session management?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Firebase Authentication with session cookies (30-day expiry) + Firestore for session metadata (user preferences, game state) \u2014 Firebase Auth handles the auth, session cookies persist across devices",
+          "correct": true
+        },
+        {
+          "text": "Self-managed JWT tokens stored in Cloud Storage \u2014 tokens stored as objects in GCS, not secure, requires custom token validation",
+          "correct": false
+        },
+        {
+          "text": "Cloud Identity-Aware Proxy (IAP) for authentication \u2014 IAP is for GCP resources, not game web portal authentication",
+          "correct": false
+        },
+        {
+          "text": "GKE Ingress with Cloud Armor for authentication \u2014 Cloud Armor is WAF and DDoS protection, not authentication service",
+          "correct": false
+        }
+      ],
+      "explanation": "Firebase Authentication (part of Google Cloud) provides the identity layer. Session cookies (JWT-based) with 30-day expiry persist across device restarts. Firestore stores session metadata. This is the managed, scalable approach for game web portal authentication."
+    },
+    {
+      "domain": "Dress4Win (Retail/Container Migration)",
+      "question": "Dress4Win needs to migrate 20TB of historical order data from an on-premises data warehouse to BigQuery. The data is in SQL Server format with complex joins. Migration must be done in under 4 hours. Which approach?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "BigQuery Data Transfer Service with on-premises source \u2014 BQ DTS supports on-premises SQL Server via Data Transfer Service, handles schema conversion and scheduling",
+          "correct": false
+        },
+        {
+          "text": "Dataproc (Spark) with connector for SQL Server \u2014 Dataproc cluster reads from SQL Server via JDBC, writes to BigQuery via BigQuery connector, parallel transfer handles 20TB in <4 hours",
+          "correct": true
+        },
+        {
+          "text": "Manual export to CSV, upload to Cloud Storage, load to BigQuery \u2014 manual process is too slow and error-prone for 20TB in 4 hours",
+          "correct": false
+        },
+        {
+          "text": "Cloud Data Fusion with JDBC connector \u2014 Data Fusion is ETL orchestration, Dataproc is the faster choice for bulk transfer from SQL Server to BigQuery",
+          "correct": false
+        }
+      ],
+      "explanation": "Dataproc with Spark (BigQuery connector) is the fastest way to bulk transfer 20TB from SQL Server to BigQuery: parallel JDBC reads from SQL Server, parallel writes to BigQuery. A Dataproc cluster with 20 workers can transfer 20TB in under 4 hours. BQ DTS doesn't natively support on-premises SQL Server."
+    },
+    {
+      "domain": "TerramEarth (IoT/Streaming)",
+      "question": "TerramEarth's data pipeline uses Dataflow streaming. During a deployment, a bug caused 1 hour of vehicle telemetry data to be incorrectly processed (all speed values were multiplied by 0.1). The data has already been written to BigQuery. How do you fix this?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Use BigQuery Time Travel (up to 7 days) to query the pre-deployment state of the table, identify affected partitions, re-process from Pub/Sub replay with corrected pipeline, overwrite affected partitions",
+          "correct": true
+        },
+        {
+          "text": "Update all affected rows manually with UPDATE statements in BigQuery \u2014 1 hour of data at 500K messages/sec = billions of rows, too slow and expensive",
+          "correct": false
+        },
+        {
+          "text": "Delete the affected BigQuery partition and re-run the Dataflow job with the fixed code \u2014 this requires re-processing all data through Dataflow which may be slow, but is correct",
+          "correct": false
+        },
+        {
+          "text": "BigQuery Time Travel can't help \u2014 Time Travel only shows historical data, can't be used to restore to a specific point. Use Cloud SQL with point-in-time recovery instead.",
+          "correct": false
+        }
+      ],
+      "explanation": "BigQuery Time Travel (available up to 7 days) allows querying the table as it existed before the buggy deployment. Use Time Travel to identify the affected time window, then replay Pub/Sub messages (retained for 7 days) through the corrected Dataflow pipeline, and overwrite the affected BigQuery partitions. This is the standard BigQuery data repair pattern."
+    },
+    {
+      "domain": "Helix (Healthcare/HIPAA/Security)",
+      "question": "Helix needs to grant a 3rd-party auditor temporary (30-day) access to read specific BigQuery tables containing de-identified clinical trial results. The auditor uses their own identity provider (Okta). How do you enable this?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Set up Cloud Identity (Google Workspace) federation with Okta as the IdP (SAML 2.0) + create a Google Group in Cloud Identity + add auditor's Okta users to the group + grant BigQuery Data Viewer IAM role to the group with Condition: access expire in 30 days",
+          "correct": true
+        },
+        {
+          "text": "Create service account credentials for the auditor \u2014 service accounts are for workloads, not human auditors, and keys can't be easily expired in 30 days",
+          "correct": false
+        },
+        {
+          "text": "Share BigQuery datasets via public sharing \u2014 sharing with the internet is a major security risk, not acceptable for PHI data",
+          "correct": false
+        },
+        {
+          "text": "Export data to Cloud Storage and share via signed URLs \u2014 exporting PHI outside BigQuery violates the data perimeter and HIPAA requirements",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Identity federation with Okta lets auditors authenticate with their existing Okta credentials. IAM Conditional Access with expiration (accessPolicies/conditions with timestampBefore) automatically revokes access after 30 days. BigQuery Data Viewer role (dataset or table level) limits access to the specific tables. Group membership in Cloud Identity makes it easy to add/remove auditors."
+    },
+    {
+      "domain": "Mountkirk Games (Gaming/Multi-Region)",
+      "question": "Mountkirk Games processes player transactions (in-game purchases) through a microservices architecture on GKE. Transaction data must be written to BigQuery for financial reporting. At-least-once delivery is acceptable. How do you ensure exactly-once financial reporting?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Pub/Sub (at-least-once) \u2192 Dataflow (exactly-once with deduplication) \u2192 BigQuery with INSERT ALL (merge) \u2014 Dataflow uses shuffle-backed state to deduplicate within a window, INSERT ALL merges on transaction_id to prevent duplicates in BigQuery",
+          "correct": true
+        },
+        {
+          "text": "Pub/Sub exactly-once delivery enabled \u2192 Dataflow \u2192 BigQuery streaming insert \u2014 Pub/Sub exactly-once is sufficient, Dataflow and BigQuery can be at-least-once",
+          "correct": false
+        },
+        {
+          "text": "Pub/Sub \u2192 Dataflow with windowed aggregation \u2192 BigQuery \u2014 windowing aggregates data, doesn't guarantee exactly-once for individual transaction records",
+          "correct": false
+        },
+        {
+          "text": "Pub/Sub Lite (zonal) \u2192 Cloud Functions \u2192 BigQuery \u2014 Cloud Functions doesn't provide exactly-once semantics, at-least-once only",
+          "correct": false
+        }
+      ],
+      "explanation": "Dataflow's exactly-once processing uses shuffle-backed state for deduplication. Combined with BigQuery INSERT ALL (merge) using transaction_id as the key ensures duplicates are merged in BigQuery. This is the financial-grade exactly-once pattern on GCP."
+    },
+    {
+      "domain": "Dress4Win (Retail/Container Migration)",
+      "question": "Dress4Win's GKE cluster stores session state in an in-memory HashMap in each pod. During peak traffic, sessions are lost when pods restart due to scaling. Which stateful session management solution?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Cloud Memorystore for Redis \u2014 in-memory Redis store, sub-millisecond latency, deploy a Redis cluster (2 shards, 1 replica each) for HA, session affinity via sticky sessions on the load balancer",
+          "correct": true
+        },
+        {
+          "text": "GKE with StatefulSet and PersistentVolumeClaim \u2014 StatefulSets are for stateful workloads like databases, not for session caching, adds unnecessary complexity",
+          "correct": false
+        },
+        {
+          "text": "Firestore for session storage \u2014 Firestore is multi-region, persistent, but has higher latency (10-100ms) than Redis for session cache use case",
+          "correct": false
+        },
+        {
+          "text": "GCS for session persistence \u2014 GCS is object storage, not designed for high-frequency session read/write, unsuitable for session cache",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Memorystore for Redis (HA with automatic failover) is the standard GKE session management solution: sub-millisecond latency, fully managed with automatic failover, compatible with Redis session provider libraries in all major web frameworks. StatefulSets are for stateful databases, not ephemeral session cache."
+    },
+    {
+      "domain": "Mountkirk Games (Gaming/Multi-Region)",
+      "question": "Mountkirk Games' real-time game analytics (Pub/Sub \u2192 Dataflow \u2192 BigQuery) experienced a 30-minute data gap due to a Dataflow job failure. What should they implement to prevent this?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Configure Pub/Sub to retain messages for 7 days + Dataflow with stateful processing and checkpointing + restart from last checkpoint on failure",
+          "correct": true
+        },
+        {
+          "text": "Increase Dataflow worker count to prevent job failure \u2014 more workers don't prevent all job failures",
+          "correct": false
+        },
+        {
+          "text": "Use Dataflow with a dead-letter queue for failed messages \u2014 DLQ handles failures after they happen, not prevention",
+          "correct": false
+        },
+        {
+          "text": "Configure Pub/Sub with exactly-once delivery \u2014 exactly-once prevents duplicates but doesn't help with job failure recovery",
+          "correct": false
+        }
+      ],
+      "explanation": "Dataflow's stateful processing with checkpointing allows the job to resume from the last successful checkpoint. Pub/Sub's 7-day retention allows replay from the gap start time. Together these prevent data loss during job failures."
+    },
+    {
+      "domain": "Dress4Win (Retail/Container Migration)",
+      "question": "Dress4Win's containerized recommendation engine (GKE) needs to call an external 3rd-party API that requires mutual TLS (mTLS). The API provider requires client certificate authentication. Which is the most secure way to implement this?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Store client certificate in Secret Manager, retrieve at pod startup via Workload Identity (GCP Service Account), pass to the application \u2014 Workload Identity eliminates key management and keys never in etcd",
+          "correct": true
+        },
+        {
+          "text": "Store the client certificate and private key in Kubernetes Secret, mount as a volume in the pod \u2014 simplest approach but keys are stored in etcd (encrypted at rest)",
+          "correct": false
+        },
+        {
+          "text": "Use Istio service mesh with PeerAuthentication policy set to mTLS STRICT \u2014 Istio handles cert rotation but requires managing the Istio control plane",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud HSM to generate and store the client certificate \u2014 HSM is for key generation, the certificate still needs to be provisioned to the pod",
+          "correct": false
+        }
+      ],
+      "explanation": "Secret Manager + Workload Identity is the most secure approach: keys are never stored in Kubernetes. The pod uses Workload Identity to authenticate to Secret Manager, retrieves the certificate at startup. No secrets in etcd, no manual key rotation needed."
+    },
+    {
+      "domain": "TerramEarth (IoT/Streaming)",
+      "question": "TerramEarth's vehicles are in areas with intermittent satellite connectivity (30 seconds connected, 5 minutes disconnected). They need to batch sensor data locally and upload when connected. Data must not be lost. Which edge storage and sync architecture?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Vehicle gateway runs a local MQTT broker (Mosquitto) for buffering, batches upload to Pub/Sub via HTTP when connected \u2014 MQTT provides reliable local buffering during disconnection periods",
+          "correct": true
+        },
+        {
+          "text": "Vehicle uses HTTP/REST POST to Cloud Pub/Sub directly when connected \u2014 no local buffering, data lost when offline",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud IoT Edge running on the vehicle gateway with local Pub/Sub Lite for buffering \u2014 IoT Edge is deprecated",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud Storage with resumable uploads \u2014 Cloud Storage resumable uploads handle intermittent connectivity but don't provide local buffering and state management",
+          "correct": false
+        }
+      ],
+      "explanation": "The vehicle gateway runs a local MQTT broker for local buffering during disconnection. When connectivity is available, it uploads batched messages to Pub/Sub via HTTP. This pattern handles intermittent connectivity while guaranteeing no data loss."
+    },
+    {
+      "domain": "Helix (Healthcare/HIPAA/Security)",
+      "question": "Helix needs to run a clinical trial analysis app on GKE that accesses PHI from Cloud SQL. A 3rd-party vendor needs temporary access to debug a production issue. How do you enable this securely?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Create a temporary service account for the vendor, assign minimal RBAC, set Service Account Key Expiration to 24 hours using IAM Conditions, enable Cloud Audit Logs, revoke after issue resolution",
+          "correct": true
+        },
+        {
+          "text": "Add the vendor's Google account as an Owner on the project \u2014 too broad, full access to everything",
+          "correct": false
+        },
+        {
+          "text": "Share the existing service account credentials via Secret Manager with the vendor \u2014 sharing credentials is a security risk regardless of storage method",
+          "correct": false
+        },
+        {
+          "text": "Use Cloud IAP to tunnel to the GKE cluster \u2014 IAP is for human access, not for a 3rd-party application debugging a service",
+          "correct": false
+        }
+      ],
+      "explanation": "Create a dedicated debug service account with minimal permissions. Set IAM Condition for serviceAccountKeyExpiresAfter=86400s. Enable Cloud Audit Logs to track access. Immediately revoke after resolution. This is the GCP recommended pattern for temporary vendor access."
+    },
+    {
+      "domain": "Mountkirk Games (Gaming/Multi-Region)",
+      "question": "Mountkirk Games wants to implement a game moderation system: player chat messages are processed in real-time, and toxic content is flagged and deleted within 5 seconds. Which GCP service for real-time content moderation?",
+      "shuffleChoices": true,
+      "choices": [
+        {
+          "text": "Pub/Sub \u2192 Cloud Functions (trigger on message) \u2192 Cloud Natural Language API (moderateContent) \u2192 if toxic, publish to Pub/Sub topic to delete the message from the game server",
+          "correct": true
+        },
+        {
+          "text": "Pub/Sub \u2192 Dataflow \u2192 BigQuery for storage \u2192 scheduled review \u2014 too slow for 5-second moderation requirement",
+          "correct": false
+        },
+        {
+          "text": "Cloud Armor for content moderation \u2014 Cloud Armor is WAF/DDoS protection, not content moderation for chat",
+          "correct": false
+        },
+        {
+          "text": "Vertex AI TextModeration API \u2014 Vertex AI has content moderation but Cloud NL API's moderateContent is the purpose-built API for this",
+          "correct": false
+        }
+      ],
+      "explanation": "Cloud Natural Language API's moderateContent endpoint is purpose-built for real-time content moderation. Pub/Sub \u2192 Cloud Functions \u2192 NL API \u2192 Pub/Sub for deletion provides sub-5-second latency for chat moderation. This is the simplest, fully managed GCP-native approach."
+    }
+  ]
+}
